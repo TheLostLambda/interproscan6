@@ -46,9 +46,9 @@ process WRITE_GFF3 {
 
                         String line
                         if (strand == "+") {
-                            line = "${seqId}\tesl-translate\tCDS\t${start}\t${end}\t.\t${strand}\t0\tID=\"${parentId}\"\n"
+                            line = "${seqId}\tesl-translate\tCDS\t${start}\t${end}\t.\t${strand}\t0\tID=${parentId}\n"
                         } else {
-                            line = "${seqId}\tesl-translate\tCDS\t${end}\t${start}\t.\t${strand}\t0\tID=\"${parentId}\"\n"
+                            line = "${seqId}\tesl-translate\tCDS\t${end}\t${start}\t.\t${strand}\t0\tID=${parentId}\n"
                         }
 
                         gff3File.append(line)
@@ -56,7 +56,7 @@ process WRITE_GFF3 {
                         proteins[proteinMd5].each { modelAcc, match->
                             match = Match.fromMap(match)
                             match.locations.each { Location loc ->
-                                // gff3File.append(proteinFormatLine(row.id, match, loc, parentId, strand == "+" ? start : end, strand) + "\n")
+                                gff3File.append(proteinFormatLine(seqId, match, loc, parentId, strand == "+" ? start : end, strand) + "\n")
                             }
                         }
                     }
