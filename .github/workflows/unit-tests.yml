@@ -60,21 +60,19 @@ jobs:
       - name: Cache nf-test
         uses: actions/cache@v4
         with:
-          path: |
-            nf-test
-            nf-test.jar
-          key: ${{ runner.os }}-nf-test-0.9.2-${{ hashFiles('**/nf-test') }}
+          path: ~/.cache/nf-test
+          key: ${{ runner.os }}-nf-test-0.9.2
           restore-keys: |
-            ${{ runner.os }}-nf-test-0.9.2-
             ${{ runner.os }}-nf-test-
 
       - name: Install nf-test
-        shell: bash -l {0}
         run: |
-          if [ ! -f /usr/local/bin/nf-test ]; then
+          mkdir -p ~/.cache/nf-test
+          if [ ! -f ~/.cache/nf-test/nf-test ]; then
             wget -qO- https://get.nf-test.com | bash -s 0.9.2
+            mv nf-test ~/.cache/nf-test/nf-test
           fi
-          sudo mv nf-test /usr/local/bin
+          sudo cp ~/.cache/nf-test/nf-test /usr/local/bin/
 
       - name: Run NF-Test unit tests
         shell: bash -l {0}
