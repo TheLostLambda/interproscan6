@@ -7,19 +7,21 @@ process WRITE_GFF3 {
     executor 'local'
 
     input:
-    val matchesFiles
-    val outputPath
-    val seqDbPath
+    val matches_files
+    val output_file
+    val seq_db_file
     val nucleic
     val interproscan_version
 
     exec:
-    SeqDB db = new SeqDB(seqDbPath.toString())
-    def gff3File = new File("${outputPath}.gff3".toString())
+    SeqDB db = new SeqDB(seq_db_file.toString())
+    def gff3File = new File(output_file.toString())
     gff3File.text = "##gff-version 3.1.26\n"
     gff3File.append("##interproscan-version ${interproscan_version}\n")
 
-    matchesFiles.each { matchFile ->
+    Pattern esl_pattern = Pattern.compile(/^source=[^"]+\s+coords=(\d+)\.\.(\d+)\s+length=\d+\s+frame=(\d+)\s+desc=.*$/)
+
+    matches_files.each { matchFile ->
         matchFile = new File(matchFile.toString())
         Map proteins = new ObjectMapper().readValue(matchFile, Map)
 
@@ -35,7 +37,28 @@ process WRITE_GFF3 {
                     // a proteinSeq/Md5 may be associated with multiple nt md5s/seq, only pull the data where the nt md5/seq is relevant
                     proteinSeqData = db.getOrfSeq(proteinMd5, nucleicMd5)
                     proteinSeqData.each { row ->
-                        gff3File.append(nucleotideLineFormat(seqId, row) + "\n")
+                        def matcher = esl_pattern.matcher(row.description)
+                        assert matcher.matches()
+                        int start = matcher.group(1) as int
+                        int end = matcher.group(2) as int
+                        String strand = (matcher.group(3) as int) < 4 ? "+" : "-"
+                        String parentId = "${seqId}_${row.id}"
+
+                        String line
+                        if (strand == "+") {
+                            line = "${seqId}\tesl-translate\tCDS\t${start}\t${end}\t.\t${strand}\t0\tID=\"${parentId}\"\n"
+                        } else {
+                            line = "${seqId}\tesl-translate\tCDS\t${end}\t${start}\t.\t${strand}\t0\tID=\"${parentId}\"\n"
+                        }
+
+                        gff3File.append(line)
+
+                        proteins[proteinMd5].each { modelAcc, match->
+                            match = Match.fromMap(match)
+                            match.locations.each { Location loc ->
+                                // gff3File.append(proteinFormatLine(row.id, match, loc, parentId, strand == "+" ? start : end, strand) + "\n")
+                            }
+                        }
                     }
                 }
             }
@@ -47,10 +70,9 @@ process WRITE_GFF3 {
 
                 matchesMap.each { modelAcc, match ->
                     match = Match.fromMap(match)
-                    String memberDb = match.signature.signatureLibraryRelease.library
                     seqData.each { row ->
                         match.locations.each { Location loc ->
-                            gff3File.append(proteinFormatLine(row, match, loc) + "\n")
+                            gff3File.append(proteinFormatLine(row.id, match, loc, null, null, null) + "\n")
                         }
                     }
                 } // end of matches in matchesNode
@@ -59,8 +81,7 @@ process WRITE_GFF3 {
     } // end of matchesFiles
 }
 
-def proteinFormatLine(seqInfo, match, loc) {
-
+def proteinFormatLine(seqId, match, loc, parentId, cdsStart, strand) {
     String memberDb = match.signature.signatureLibraryRelease.library
     String entryAcc = match.signature.entry?.accession ?: '-'
     def goTerms = null
@@ -75,11 +96,14 @@ def proteinFormatLine(seqInfo, match, loc) {
         case ["CATH-Gene3D", "CATH-FunFam", "CDD", "PROSITE profiles", "SMART", "SUPERFAMILY"]:
             feature_type = "polypeptide_domain"
             break
-        case ["HAMAP", "MobiDB-lite", "PANTHER", "PIRSF", "PIRSR", "SFLD"]:
-            feature_type = "polypeptide_region"
-            break
         case ["NCBIFAM", "Pfam"]:
             feature_type = ["DOMAIN", "REPEAT"].contains(match.signature.type.toUpperCase()) ? "polypeptide_domain" : "polypeptide_region"
+            break
+        case ["PRINTS", "PROSITE patterns"]:
+            feature_type = "polypeptide_motif"
+            break
+        case ["SignalP-Prok", "SignalP-Euk"]:
+            feature_type = "signal_peptide"
             break
         case "AntiFam":
             feature_type = "spurious_protein"
@@ -90,87 +114,52 @@ def proteinFormatLine(seqInfo, match, loc) {
         case "DeepTMHMM":
             feature_type = "transmembrane_helix"
             break
-        case ["PRINTS", "PROSITE patterns"]:
-            feature_type = "polypeptide_motif"
-            break
-        case ["SignalP-Prok", "SignalP-Euk"]:
-            feature_type = "signal_peptide"
-            break
         case "Phobius":
             feature_type = match.signature.type.toUpperCase() == "CYTOPLASMIC_DOMAIN" ? "cytoplasmic_polypeptide_region" :
                     match.signature.type.toUpperCase() == "NON_CYTOPLASMIC_DOMAIN" ? "non_cytoplasmic_polypeptide_region" :
-                    match.signature.type.toUpperCase() == "TRANSMEMBRANE" ? "transmembrane_helix" :
-                    "signal_peptide"
+                    match.signature.type.toUpperCase() == "TRANSMEMBRANE" ? "transmembrane_helix" : "signal_peptide"
             break
+        default:
+            // HAMAP, MobiDB-lite, Panther, PIRSF, PIRSR, SFLD
+            feature_type = "polypeptide_region"
     }
 
-    def scoringValue = getScoringValue(match, loc)
+    def score = null
+    switch (memberDb) {
+        case ["CDD", "PRINT"]:
+            score = match.evalue
+            break
+        case ["HAMAP", "PROSITE profiles"]:
+            score = loc.score
+            break
+        case ["SignalP-Prok", "SignalP-Euk"]:
+            score = loc.pvalue
+            break
+        default:
+            score = loc.evalue
+    }
+
+    String interproAccession = match.signature.entry?.accession
 
     def attributes = [
-            "Name=${match.signature.accession}",
-            match.signature.description ? "Alias=${match.signature.description.replace(';',' ')}" : "Alias=${match.signature.name}",
-            goTerms ? "Ontology_term=" + goTerms.collect { it.id }.join(",") : null,
-            entryAcc && entryAcc != "-" ? "Dbxref=InterPro:${entryAcc}" : null,
-            "type=${match.signature.type}",
-            "representative=${loc.representative}",
-    ].findAll { it }.join(";")
-
-    return [
-            seqInfo.id,
-            memberDb,
-            feature_type,
-            loc.start,
-            loc.end,
-            scoringValue,
-            ".", // strand
-            ".", // phase
-            attributes
-    ].join("\t")
-}
-
-def nucleotideLineFormat(seqId, orfInfo){
-    def SOURCE_NT_PATTERN = Pattern.compile(/^source=[^"]+\s+coords=(\d+)\.\.(\d+)\s+length=\d+\s+frame=(\d+)\s+desc=.*$/)
-    def proteinSource = SOURCE_NT_PATTERN.matcher(orfInfo.description)
-    assert proteinSource.matches()
-    int start = proteinSource.group(1) as int
-    int end = proteinSource.group(2) as int
-    String strand = proteinSource.group(3) as int < 4 ? "+" : "-"
+        match.signature.name ? "Name=${match.signature.name}" : null,
+        "Alias=${match.signature.accession}",
+        parentId ? "Parent=${parentId}" : null,
+        interproAccession ? "DBxref=InterPro:${interproAccession}" : null,
+        // Add GO terms
+        "type=${match.signature.type}",
+        "representative=${loc.representative}",
+    ].findAll { it }
 
     return [
         seqId,
-        "esl-translate",
-        "CDS",
-        strand == '-' ? end : start, // check if is reverse
-        strand == '-' ? start : end, // check if is reverse
-        ".", // score
-        strand,
-        0, //phase
-        "ID=${seqId}_${orfInfo.id}"
+        memberDb,
+        feature_type,
+        cdsStart ? (loc.start - 1) * 3 + cdsStart : loc.start,
+        cdsStart ? loc.end * 3 + cdsStart -1 : loc.end,
+        score ?: ".",
+        strand ?: ".",
+        parentId ? "0" : ".",
+        attributes.join(";")
     ].join("\t")
-}
-
-def getScoringValue(match, loc) {
-    String memberDb = match.signature.signatureLibraryRelease.library
-
-    switch (memberDb) {
-        case ["CDD", "PRINT"]:
-            scoringValue = match.evalue
-            break
-        case ["SignalP-Prok", "SignalP-Euk"]:
-            scoringValue = loc.pvalue
-            break
-        case ["HAMAP", "PROSITE profiles"]:
-            scoringValue = loc.score
-            break
-        case ["COILS", "MobiDB-lite", "Phobius", "PROSITE patterns", "DeepTMHMM"]:
-            scoringValue = "-"
-            break
-        case "PANTHER":
-            scoringValue = loc.evalue
-            break
-        default:
-            scoringValue = loc.evalue
-    }
-    def scoringValue = (scoringValue == "-" || scoringValue == null) ? "." : scoringValue
-    return scoringValue
 }
