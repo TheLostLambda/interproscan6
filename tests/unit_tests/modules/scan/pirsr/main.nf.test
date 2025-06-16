@@ -4,18 +4,13 @@ nextflow_process {
     script "modules/pirsr/main.nf"
     process "PARSE_PIRSR"
 
-    stage {
-        symlink "tests/data/channels/pirsr.hmmsearch.out"
-        symlink "tests/data/databases/pirsr/2025_01/sr_uru.json"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/pirsr.hmmsearch.out")]
-                input[1] = "meta/tests/data/databases/pirsr/2025_01"
+                input[0] = [1, file("$baseDir/tests/data/channels/pirsr.hmmsearch.out")]
+                input[1] = "$baseDir/tests/data/databases/pirsr/2025_01"
                 input[2] = "sr_uru.json"
                 """
             }

@@ -4,17 +4,12 @@ nextflow_process {
     script "modules/signalp/main.nf"
     process "PARSE_SIGNALP"
 
-    stage {
-        symlink "tests/data/channels/signalp/output.json"
-        symlink "tests/data/channels/signalp/output.gff3"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, "other", "fast", file("meta/tests/data/channels/signalp")]
+                input[0] = [1, "other", "fast", file("$baseDir/tests/data/channels/signalp")]
                 """
             }
         }

@@ -4,19 +4,13 @@ nextflow_process {
     script "modules/superfamily/main.nf"
     process "PARSE_SUPERFAMILY"
 
-    stage {
-        symlink "tests/data/channels/superfamily.out"
-        symlink "tests/data/databases/superfamily/1.75/model.tab"
-        symlink "tests/data/databases/superfamily/1.75/hmmlib_1.75_minimalist"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/superfamily.out")]
-                input[1] = "meta/tests/data/databases/superfamily/1.75"
+                input[0] = [1, file("$baseDir/tests/data/channels/superfamily.out")]
+                input[1] = "$baseDir/tests/data/databases/superfamily/1.75"
                 input[2] = "model.tab"
                 input[3] = "hmmlib_1.75_minimalist"
                 """

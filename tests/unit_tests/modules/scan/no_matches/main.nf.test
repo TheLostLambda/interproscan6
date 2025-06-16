@@ -4,12 +4,6 @@ nextflow_process {
     script "modules/no_matches/main.nf"
     process "REPORT_NO_MATCHES"
 
-    stage {
-        symlink "tests/data/channels/antifam.json"
-        symlink "tests/data/channels/pfam.json"
-        symlink "tests/data/sequences/test.faa"
-    }
-
     test("Should run without failures") {
 
         when {
@@ -18,8 +12,8 @@ nextflow_process {
             }
             process {
                 """
-                input[0] = [1, [file("meta/tests/data/channels/antifam.json"), file("meta/tests/data/channels/pfam.json")]]
-                input[1] = [1, file("meta/tests/data/sequences/test.faa")]
+                input[0] = [1, [file("$baseDir/tests/data/channels/antifam.json"), file("$baseDir/tests/data/channels/pfam.json")]]
+                input[1] = [1, file("$baseDir/tests/data/sequences/test.faa")]
                 """
             }
         }

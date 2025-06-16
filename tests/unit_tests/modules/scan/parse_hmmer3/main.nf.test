@@ -4,20 +4,12 @@ nextflow_process {
     script "modules/antifam/main.nf"
     process "PARSE_ANTIFAM"
 
-    stage {
-        symlink "tests/data/channels/antifam.hmmsearch.out"
-        symlink "tests/data/channels/antifam.json"
-    }
-
     test("Should run without failures") {
 
         when {
-            params {
-
-            }
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/antifam.hmmsearch.out")]
+                input[0] = [1, file("$baseDir/tests/data/channels/antifam.hmmsearch.out")]
                 """
             }
         }

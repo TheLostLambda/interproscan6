@@ -4,16 +4,12 @@ nextflow_process {
     script "modules/mobidblite/main.nf"
     process "PARSE_MOBIDBLITE"
 
-    stage {
-        symlink "tests/data/channels/mobidblite.output.tsv"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/mobidblite.output.tsv")]
+                input[0] = [1, file("$baseDir/tests/data/channels/mobidblite.output.tsv")]
                 """
             }
         }

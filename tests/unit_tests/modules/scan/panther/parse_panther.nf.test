@@ -4,17 +4,12 @@ nextflow_process {
     script "modules/panther/main.nf"
     process "PARSE_PANTHER"
 
-    stage {
-        symlink "tests/data/channels/panther.treegrafter.json"
-        symlink "tests/data/channels/epang.tsv"
-    }
-
     test("Should run PREPARE_SMART without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/panther.treegrafter.json"), file("meta/tests/data/channels/epang.tsv")]
+                input[0] = [1, file("$baseDir/tests/data/channels/panther.treegrafter.json"), file("$baseDir/tests/data/channels/epang.tsv")]
                 """
             }
         }

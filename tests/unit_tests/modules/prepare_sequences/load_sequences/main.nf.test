@@ -4,18 +4,13 @@ nextflow_process {
     script "modules/prepare_sequences/main.nf"
     process "LOAD_SEQUENCES"
 
-    stage {
-        symlink "tests/data/sequences/test.faa"
-        symlink "tests/data/sequences/test.fna"
-    }
-
     test("Should load protein sequences without failures") {
 
         when {
             params {}
             process {
                 """
-                input[0] = file("meta/tests/data/sequences/test.faa")
+                input[0] = file("$baseDir/tests/data/sequences/test.faa")
                 input[1] = false
                 """
             }
@@ -32,7 +27,7 @@ nextflow_process {
             params {}
             process {
                 """
-                input[0] = file("meta/tests/data/sequences/test.fna")
+                input[0] = file("$baseDir/tests/data/sequences/test.fna")
                 input[1] = true
                 """
             }

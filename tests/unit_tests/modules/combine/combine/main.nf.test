@@ -4,21 +4,12 @@ nextflow_process {
     script "modules/combine/main.nf"
     process "COMBINE_MATCHES"
 
-    stage {
-        symlink "tests/data/channels/antifam.json"
-        symlink "tests/data/channels/pfam.json"
-        symlink "tests/data/channels/no_matches.json"
-    }
-
     test("Should run without failures") {
 
         when {
-            params {
-
-            }
             process {
                 """
-                input[0] = [1, [file("meta/tests/data/channels/antifam.json"), file("meta/tests/data/channels/pfam.json"), file("meta/tests/data/channels/no_matches.json")]]
+                input[0] = [1, [file("$baseDir/tests/data/channels/antifam.json"), file("$baseDir/tests/data/channels/pfam.json"), file("$baseDir/tests/data/channels/no_matches.json")]]
                 """
             }
         }

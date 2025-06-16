@@ -4,11 +4,6 @@ nextflow_workflow {
     script "subworkflows/init/main.nf"
     workflow "INIT_PIPELINE"
 
-    stage {
-        symlink "tests/data/sequences/test.faa"
-        symlink "conf/applications.config"
-    }
-
     test("Should run without failures") {
         when {
             params {
@@ -32,7 +27,7 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = "meta/tests/data/sequences/test.faa"     // input
+                input[0] = "$baseDir/tests/data/sequences/test.faa"     // input
                 input[1] = "pfam,ncbifam"                           // applictaions
                 input[2] = params.apps_config                       // apps_config
                 input[3] = "data"                                   // datadir
@@ -77,7 +72,7 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = "meta/tests/data/sequences/missing.faa"  // input
+                input[0] = "$baseDir/tests/data/sequences/missing.faa"  // input
                 input[1] = "pfam,ncbifam"                           // applictaions
                 input[2] = params.apps_config                       // apps_config
                 input[3] = "data"                                   // datadir
@@ -123,7 +118,7 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = "meta/tests/data/sequences/test.faa"     // input
+                input[0] = "$baseDir/tests/data/sequences/test.faa"     // input
                 input[1] = "pfam,ncbifam,invalidfam"                // applictaions
                 input[2] = params.apps_config                       // apps_config
                 input[3] = "data"                                   // datadir
@@ -168,7 +163,7 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = "meta/tests/data/sequences/test.faa"     // input
+                input[0] = "$baseDir/tests/data/sequences/test.faa"     // input
                 input[1] = "pfam,ncbifam"                           // applictaions
                 input[2] = params.apps_config                       // apps_config
                 input[3] = "data"                                   // datadir
@@ -213,7 +208,7 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = "meta/tests/data/sequences/test.faa"     // input
+                input[0] = "$baseDir/tests/data/sequences/test.faa"     // input
                 input[1] = "pfam,ncbifam"                           // applictaions
                 input[2] = params.apps_config                       // apps_config
                 input[3] = "data"                                   // datadir
@@ -258,7 +253,7 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = "meta/tests/data/sequences/test.faa"     // input
+                input[0] = "$baseDir/tests/data/sequences/test.faa"     // input
                 input[1] = "pfam,ncbifam"                           // applictaions
                 input[2] = params.apps_config                       // apps_config
                 input[3] = null                                     // datadir
@@ -303,10 +298,10 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = "meta/tests/data/sequences/test.faa"     // input
+                input[0] = "$baseDir/tests/data/sequences/test.faa"     // input
                 input[1] = "pfam,ncbifam"                           // applictaions
                 input[2] = params.apps_config                       // apps_config
-                input[3] = "meta/tests/data/sequences/test.faa"     // datadir
+                input[3] = "$baseDir/tests/data/sequences/test.faa"     // datadir
                 input[4] = "json,tsv,xml,csv"                       // formats
                 input[5] = "results"                                // outdir
                 input[6] = null                                     // outprefix  
@@ -348,10 +343,10 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = "meta/tests/data/sequences/test.faa"     // input
+                input[0] = "$baseDir/tests/data/sequences/test.faa"     // input
                 input[1] = "pfam,ncbifam"                           // applictaions
                 input[2] = params.apps_config                       // apps_config
-                input[3] = "meta/tests/data/sequences/test.faa"     // datadir
+                input[3] = "$baseDir/tests/data/sequences/test.faa"     // datadir
                 input[4] = "json,tsv,xml,csv"                       // formats
                 input[5] = "results"                                // outdir
                 input[6] = null                                     // outprefix  
@@ -400,10 +395,10 @@ nextflow_workflow {
             }
             workflow {
                 """
-                input[0] = "meta/tests/data/sequences/test.faa"     // input
+                input[0] = "$baseDir/tests/data/sequences/test.faa"     // input
                 input[1] = "pfam,ncbifam"                           // applictaions
                 input[2] = params.apps_config                       // apps_config
-                input[3] = "meta/tests/data/sequences/test.faa"     // datadir
+                input[3] = "$baseDir/tests/data/sequences/test.faa"     // datadir
                 input[4] = "json,tsv,xml,csv"                       // formats
                 input[5] = "results"                                // outdir
                 input[6] = null                                     // outprefix  

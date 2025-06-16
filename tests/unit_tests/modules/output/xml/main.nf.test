@@ -4,12 +4,6 @@ nextflow_process {
     script "modules/output/xml/main.nf"
     process "WRITE_XML"
 
-    stage {
-        symlink "tests/data/channels/matches_with_representative.json"
-        symlink "tests/data/sequences/sequences.db"
-        symlink "tests/data/output/test.faa.xml"
-    }
-
     test("Should run without failures") {
 
         when {
@@ -36,9 +30,9 @@ nextflow_process {
             }
             process {
                 """
-                input[0] = [file("meta/tests/data/channels/matches_with_representative.json")]
+                input[0] = [file("$baseDir/tests/data/channels/matches_with_representative.json")]
                 input[1] = "../../../unit_test_output.xml"
-                input[2] = file("meta/tests/data/sequences/sequences.db")
+                input[2] = file("$baseDir/tests/data/sequences/sequences.db")
                 input[3] = false
                 input[4] = "105.0"
                 input[5] = params.db_releases

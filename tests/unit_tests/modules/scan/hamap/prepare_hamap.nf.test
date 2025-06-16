@@ -15,8 +15,8 @@ nextflow_process {
         when {
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/hamap.hmmsearch.tab"), file("meta/tests/data/channels/hamap.faa")]
-                input[1] = "meta/tests/data/databases/hamap/2025_01"
+                input[0] = [1, file("$baseDir/tests/data/channels/hamap.hmmsearch.tab"), file("$baseDir/tests/data/channels/hamap.faa")]
+                input[1] = "$baseDir/tests/data/databases/hamap/2025_01"
                 input[2] = "profiles"
                 """
             }

@@ -4,16 +4,12 @@ nextflow_process {
     script "modules/phobius/main.nf"
     process "PARSE_PHOBIUS"
 
-    stage {
-        symlink "tests/data/channels/phobius.out"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/phobius.out")]
+                input[0] = [1, file("$baseDir/tests/data/channels/phobius.out")]
                 """
             }
         }

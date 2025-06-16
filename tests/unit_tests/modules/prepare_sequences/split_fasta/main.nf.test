@@ -4,18 +4,13 @@ nextflow_process {
     script "modules/prepare_sequences/main.nf"
     process "SPLIT_FASTA"
 
-    stage {
-        symlink "tests/data/sequences/sequences.db"
-        symlink "tests/data/sequences/nt_sequences.db"
-    }
-
     test("Should build a protein fasta without failures") {
 
         when {
             params {}
             process {
                 """
-                input[0] = file("meta/tests/data/sequences/sequences.db")
+                input[0] = file("$baseDir/tests/data/sequences/sequences.db")
                 input[1] = 5000
                 input[2] = false
                 """
@@ -33,7 +28,7 @@ nextflow_process {
             params {}
             process {
                 """
-                input[0] = file("meta/tests/data/sequences/nt_sequences.db")
+                input[0] = file("$baseDir/tests/data/sequences/nt_sequences.db")
                 input[1] = 5000
                 input[2] = false
                 """

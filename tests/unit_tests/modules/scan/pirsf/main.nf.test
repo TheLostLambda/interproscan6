@@ -4,19 +4,13 @@ nextflow_process {
     script "modules/pirsf/main.nf"
     process "PARSE_PIRSF"
 
-    stage {
-        symlink "tests/data/channels/pirsf.hmmsearch.out"
-        symlink "tests/data/channels/pirsf.noLookup.faa"
-        symlink "tests/data/databases/pirsf/3.10/pirsf.dat"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/pirsf.noLookup.faa"), file("meta/tests/data/channels/pirsf.hmmsearch.out")]
-                input[1] = "meta/tests/data/databases/pirsf/3.10"
+                input[0] = [1, file("$baseDir/tests/data/channels/pirsf.noLookup.faa"), file("$baseDir/tests/data/channels/pirsf.hmmsearch.out")]
+                input[1] = "$baseDir/tests/data/databases/pirsf/3.10"
                 input[2] = "pirsf.dat"
                 """
             }

@@ -4,16 +4,12 @@ nextflow_process {
     script "modules/coils/main.nf"
     process "PARSE_COILS"
 
-    stage {
-        symlink "tests/data/channels/coils.out"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/coils.out")]
+                input[0] = [1, file("$baseDir/tests/data/channels/coils.out")]
                 """
             }
         }

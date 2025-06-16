@@ -4,17 +4,12 @@ nextflow_process {
     script "modules/cath/gene3d/main.nf"
     process "PARSE_CATHGENE3D"
 
-    stage {
-        symlink "tests/data/channels/cathgene3d.hmmsearch.out"
-        symlink "tests/data/channels/cath.tsv"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, 1, file("meta/tests/data/channels/cathgene3d.hmmsearch.out"), file("meta/tests/data/channels/cath.tsv")]
+                input[0] = [1, 1, file("$baseDir/tests/data/channels/cathgene3d.hmmsearch.out"), file("$baseDir/tests/data/channels/cath.tsv")]
                 """
             }
         }

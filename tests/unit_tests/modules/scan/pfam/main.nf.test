@@ -4,18 +4,13 @@ nextflow_process {
     script "modules/pfam/main.nf"
     process "PARSE_PFAM"
 
-    stage {
-        symlink "tests/data/channels/pfam.hmmsearch.out"
-        symlink "tests/data/databases/pfam/37.3/pfam_a.dat"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/pfam.hmmsearch.out")]
-                input[1] = "meta/tests/data/databases/pfam/37.3"
+                input[0] = [1, file("$baseDir/tests/data/channels/pfam.hmmsearch.out")]
+                input[1] = "$baseDir/tests/data/databases/pfam/37.3"
                 input[2] = "pfam_a.dat"
                 """
             }

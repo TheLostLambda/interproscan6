@@ -4,16 +4,12 @@ nextflow_process {
     script "modules/prosite/patterns/main.nf"
     process "PARSE_PFSCAN"
 
-    stage {
-        symlink "tests/data/channels/ps_scan.out"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/ps_scan.out")]
+                input[0] = [1, file("$baseDir/tests/data/channels/ps_scan.out")]
                 """
             }
         }

@@ -4,26 +4,19 @@ nextflow_workflow {
     script "subworkflows/combine/main.nf"
     workflow "COMBINE"
 
-    stage {
-        symlink "tests/data/channels/antifam.json"
-        symlink "tests/data/channels/pfam.json"
-        symlink "tests/data/channels/no_matches.json"
-        symlink "tests/data/databases/interpro/105.0"
-    }
-
     test("Should skip adding interpro data and run without failures") {
         when {
             params {
                 match_results = [
                     [
                         1,
-                        file("meta/tests/data/channels/antifam.json"),
-                        file("meta/tests/data/channels/pfam.json"),
-                        file("meta/tests/data/channels/no_matches.json")
+                        file("$baseDir/tests/data/channels/antifam.json"),
+                        file("$baseDir/tests/data/channels/pfam.json"),
+                        file("$baseDir/tests/data/channels/no_matches.json")
                     ]
                 ]
                 db_releases = [
-                    interpro: [version: "105.0", dirpath: "meta/tests/data/databases/interpro/105.0"],
+                    interpro: [version: "105.0", dirpath: "$baseDir/tests/data/databases/interpro/105.0"],
                     antifam: [version: "8.0", dirpath: ""],
                     cathgene3d: [version: "4.3.0", dirpath: ""],
                     cathfunfam: [version: "4.3.0", dirpath: ""],
@@ -43,7 +36,7 @@ nextflow_workflow {
                 ]
                 add_goterms = true
                 add_pathways = true
-                panther_paint_dir = "meta/tests/data/databases/interpro/105.0"
+                panther_paint_dir = "$baseDir/tests/data/databases/interpro/105.0"
                 skip_interpro = true
             }
             workflow {
@@ -68,13 +61,13 @@ nextflow_workflow {
                 match_results = [
                     [
                         1,
-                        file("meta/tests/data/channels/antifam.json"),
-                        file("meta/tests/data/channels/pfam.json"),
-                        file("meta/tests/data/channels/no_matches.json")
+                        file("$baseDir/tests/data/channels/antifam.json"),
+                        file("$baseDir/tests/data/channels/pfam.json"),
+                        file("$baseDir/tests/data/channels/no_matches.json")
                     ]
                 ]
                 db_releases = [
-                    interpro: [version: "105.0", dirpath: "meta/tests/data/databases/interpro/105.0"],
+                    interpro: [version: "105.0", dirpath: "$baseDir/tests/data/databases/interpro/105.0"],
                     antifam: [version: "8.0", dirpath: ""],
                     cathgene3d: [version: "4.3.0", dirpath: ""],
                     cathfunfam: [version: "4.3.0", dirpath: ""],

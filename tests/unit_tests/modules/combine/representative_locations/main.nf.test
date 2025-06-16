@@ -4,18 +4,12 @@ nextflow_process {
     script "modules/representative_locations/main.nf"
     process "REPRESENTATIVE_LOCATIONS"
 
-    stage {
-        symlink "tests/data/channels/matches2xrefs.json"
-        symlink "tests/data/channels/matches_with_representative.json"
-    }
-
     test("Should run without failures") {
 
         when {
-            params {}
             process {
                 """
-                input[0] = [1, file("meta/tests/data/channels/matches2xrefs.json")]
+                input[0] = [1, file("$baseDir/tests/data/channels/matches2xrefs.json")]
                 """
             }
         }
