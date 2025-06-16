@@ -4,18 +4,13 @@ nextflow_process {
     script "modules/cath/funfam/main.nf"
     process "PREPARE_FUNFAM"
 
-    stage {
-        symlink "tests/data/channels/cathgene3d.funfam.json"
-        symlink "tests/data/databases/cath/4.3.0/funfam"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, 1, file("meta/tests/data/channels/cathgene3d.funfam.json")]
-                input[1] = "meta/tests/data/databases/cath/4.3.0/funfam"
+                input[0] = [1, 1, file("$baseDir/tests/data/channels/cathgene3d.funfam.json")]
+                input[1] = "$baseDir/tests/data/databases/cath/4.3.0/funfam"
                 """
             }
         }

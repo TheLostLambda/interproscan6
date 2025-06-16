@@ -4,17 +4,12 @@ nextflow_process {
     script "modules/cath/funfam/main.nf"
     process "PARSE_FUNFAM"
 
-    stage {
-        symlink "tests/data/channels/cathfunfam.hmmsearch.out"
-        symlink "tests/data/channels/cathfunfam.resolved.out"
-    }
-
     test("Should run without failures") {
 
         when {
             process {
                 """
-                input[0] = [1, 1, file("meta/tests/data/channels/cathfunfam.hmmsearch.out"), file("meta/tests/data/channels/cathfunfam.resolved.out")]
+                input[0] = [1, 1, file("$baseDir/tests/data/channels/cathfunfam.hmmsearch.out"), file("$baseDir/tests/data/channels/cathfunfam.resolved.out")]
                 """
             }
         }
