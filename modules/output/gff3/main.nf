@@ -83,13 +83,17 @@ process WRITE_GFF3 {
 
 def proteinFormatLine(seqId, match, loc, parentId, cdsStart, strand) {
     String memberDb = match.signature.signatureLibraryRelease.library
-    String entryAcc = match.signature.entry?.accession ?: '-'
-    def goTerms = null
+
+    def goTerms = []
     if(memberDb == "PANTHER"){
-        goTerms = match.treegrafter.goXRefs
-    } else {
-        goTerms = match.signature.entry?.goXRefs
+        goTerms += match.treegrafter.goXRefs
     }
+    
+    goTerms += match.signature.entry?.goXRefs
+
+    def uniqueTerms = [:]
+    goTerms.each { term -> uniqueTerms[term.id] = term }
+    goTerms = uniqueTerms.values() as List
 
     def feature_type = null
     switch (memberDb) {
@@ -146,7 +150,7 @@ def proteinFormatLine(seqId, match, loc, parentId, cdsStart, strand) {
         "Alias=${match.signature.accession}",
         parentId ? "Parent=${parentId}" : null,
         interproAccession ? "DBxref=InterPro:${interproAccession}" : null,
-        // Add GO terms
+        goTerms ? "Ontology_term=${goTerms.collect{ it.id }.join(',')}" : null,
         "type=${match.signature.type}",
         "representative=${loc.representative}",
     ].findAll { it }
