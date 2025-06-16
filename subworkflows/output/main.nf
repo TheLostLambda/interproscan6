@@ -14,6 +14,9 @@ workflow OUTPUT {
     db_releases
 
     main:
+    if (formats.contains("GFF3")) {
+        WRITE_GFF3(ch_results, "${outprefix}.gff3", seq_db_path, nucleic, iprscan_version)
+    }
     if (formats.contains("JSON")) {
         WRITE_JSON(ch_results, "${outprefix}.json", seq_db_path, nucleic, iprscan_version, db_releases)
     }
@@ -22,8 +25,5 @@ workflow OUTPUT {
     }
     if (formats.contains("XML")) {
         WRITE_XML(ch_results, "${outprefix}.xml", seq_db_path, nucleic, iprscan_version, db_releases)
-    }
-    if (formats.contains("GFF3")) {
-        WRITE_GFF3(ch_results, "${outFileName}", seq_db_path, nucleic, iprscan_version)
     }
 }
