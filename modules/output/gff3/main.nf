@@ -85,11 +85,13 @@ def proteinFormatLine(seqId, match, loc, parentId, cdsStart, strand) {
     String memberDb = match.signature.signatureLibraryRelease.library
 
     def goTerms = []
-    if(memberDb == "PANTHER"){
+    if(memberDb == "PANTHER" && match.treegrafter.goXRefs){
         goTerms += match.treegrafter.goXRefs
     }
     
-    goTerms += match.signature.entry?.goXRefs
+    if (match.signature.entry?.goXRefs) {
+        goTerms += match.signature.entry.goXRefs
+    }
 
     def uniqueTerms = [:]
     goTerms.each { term -> uniqueTerms[term.id] = term }
