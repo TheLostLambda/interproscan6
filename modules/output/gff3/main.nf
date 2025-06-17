@@ -66,19 +66,21 @@ process WRITE_GFF3 {
             proteins.each { String proteinMd5, Map matchesMap ->
                 seqData = db.proteinMd5ToProteinSeq(proteinMd5)
                 int seqLength = seqData[0].sequence.trim().length()
-                gff3File.append("##sequence-region ${seqData[0].id} 1 ${seqLength}\n")
 
-                matchesMap.each { modelAcc, match ->
-                    match = Match.fromMap(match)
-                    seqData.each { row ->
+                seqData.each { row ->
+                    gff3File.append("##sequence-region ${row.id} 1 ${seqLength}\n")
+
+                    matchesMap.each { modelAcc, match ->
+                        match = Match.fromMap(match)
+                        
                         match.locations.each { Location loc ->
                             gff3File.append(proteinFormatLine(row.id, match, loc, null, null, null) + "\n")
                         }
                     }
-                } // end of matches in matchesNode
-            } // end of proteins.each
-        } // end of nucleic else
-    } // end of matchesFiles
+                }                
+            }
+        }
+    }
 }
 
 def proteinFormatLine(seqId, match, loc, parentId, cdsStart, strand) {
