@@ -151,7 +151,7 @@ def proteinFormatLine(seqId, match, loc, parentId, cdsStart, strand) {
         match.signature.name ? "Name=${match.signature.name}" : null,
         "Alias=${match.signature.accession}",
         parentId ? "Parent=${parentId}" : null,
-        interproAccession ? "DBxref=InterPro:${interproAccession}" : null,
+        interproAccession ? "Dbxref=InterPro:${interproAccession}" : null,
         goTerms ? "Ontology_term=${goTerms.collect{ it.id }.join(',')}" : null,
         "type=${match.signature.type}",
         "representative=${loc.representative}",
