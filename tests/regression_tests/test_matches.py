@@ -14,15 +14,18 @@ def main():
     parser.add_argument("--expected", type=str, default="tests/data/output/test.faa.json", help="JSON with expected results")
     parser.add_argument("--observed", type=str, default="tests/data/output/test.faa.json", help="JSON output file from IPS6")
     parser.add_argument("--summary", action="store_true", help="Print only the summary message")
-    parser.add_argument("--format", choices=["json", "tsv", "xml", "intermediate"], default="json", help=(
+    parser.add_argument("--format", choices=["gff3", "json", "tsv", "xml", "intermediate"], default="json", help=(
         "Format of input files.\n"
-        "'json' [default], 'tsv', or 'xml' for final output files\n"
+        "'gff3', 'json' [default], 'tsv', or 'xml' for final output files\n"
         "or 'intermediate' to compare the temporary working files of InterProScan6."
     ))
     parser.add_argument("--applications", type=str, default=None, help="Limit the comparison to a comma-separated list of applicaitons")
     args = parser.parse_args()
 
-    if args.format == "json":
+    if args.format == "gff3":
+        expected = parse_gff3(args.expected)
+        observed = parse_gff3(args.observed)
+    elif args.format == "json":
         expected = parse_json(args.expected)
         observed = parse_json(args.observed)
     elif args.format == "tsv":
@@ -75,6 +78,16 @@ def parse_json(iprscan_path: str):
             sig_acc = match["signature"]["accession"]
             for loc in match["locations"]:
                 matches.append([md5, sig_acc, loc["start"], loc["end"]])
+    return [repr(nested) for nested in matches]
+
+
+def parse_gff3(iprscan_path: str):
+    matches = []
+    with open(iprscan_path, "r") as fh:
+        for line in fh:
+            if not line.startswith("#"):
+                data = line.split("\t")
+                matches.append([data[0], data[1], data[3], data[4], data[8]])
     return [repr(nested) for nested in matches]
 
 
