@@ -448,7 +448,8 @@ def writeSignalp(Map match, JsonGenerator jsonWriter) {
                 "start"             : loc.start,
                 "end"               : loc.end,
                 "representative"    : loc.representative,
-                "pvalue"            : loc.score
+                "pvalue"            : loc.score,
+                "location-fragments": formatFragments(loc.fragments),
             ]
         }
     ])
