@@ -80,7 +80,10 @@ def filterMatches(Map<String, Map<String, Match>> hmmerMatches, Map<String, Map<
 
         // Sort matches by evalue ASC, score DESC to keep the best matches
         allMatches.sort { a, b ->
-            (a.locations[0].evalue <=> b.locations[0].evalue) ?: -(a.locations[0].score <=> b.locations[0].score)
+            (a.locations[0].evalue <=> b.locations[0].evalue) ?: 
+            -(a.locations[0].score <=> b.locations[0].score) ?:
+            -( (a.locations[0].end - a.locations[0].start) <=> (b.locations[0].end - b.locations[0].start) ) ?:
+            (a.modelAccession <=> b.modelAccession)
         }
 
         filteredMatches[seqId] = []
