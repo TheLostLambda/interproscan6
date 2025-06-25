@@ -78,7 +78,7 @@ def filterMatches(Map<String, Map<String, Match>> hmmerMatches, Map<String, Map<
     hmmerMatches.each { seqId, matches ->
         List<Match> allMatches = flattenMatchLocations(matches)
 
-        // Sort matches by evalue ASC, score DESC to keep the best matches
+        // Sort matches by evalue ASC, score DESC, length DESC, and accession ASC (last resort) 
         allMatches.sort { a, b ->
             (a.locations[0].evalue <=> b.locations[0].evalue) ?: 
             -(a.locations[0].score <=> b.locations[0].score) ?:
@@ -219,16 +219,4 @@ def buildFragments(Map<String, Map<String, Match>> filteredMatches,
         processedMatches[seqId] = aggregatedMatches
     }
     return processedMatches
-}
-
-def storeMatches(Map<String, Match> aggregatedMatches, List<Match> matches) {
-    // Aggregate processed matches under their respective model accessions
-    matches.each { match ->
-        if (aggregatedMatches.containsKey(match.modelAccession)) {
-            aggregatedMatches[match.modelAccession].locations << match.locations[0]
-        } else {
-            aggregatedMatches[match.modelAccession] = match
-        }
-    }
-    return aggregatedMatches
 }
