@@ -60,15 +60,16 @@ process FIND_MISSING_DATA {
         Ugly trick to make sure that metadata for both CATH-Gene3D are CATH-FunFam
         are available even if we need only one
     */
-    if (apps_to_run.contains("cathgene3d") || apps_to_run.contains("cathfunfam")) {
-        apps_to_run.add("cathgene3d")
-        apps_to_run.add("cathfunfam")
+    def apps_to_check = apps_to_run.clone() as Set
+    if (apps_to_check.contains("cathgene3d") || apps_to_check.contains("cathfunfam")) {
+        apps_to_check.add("cathgene3d")
+        apps_to_check.add("cathfunfam")
     }
 
     with_data = [] as Set
     without_data = [] as Set
     to_download = [] as Set
-    apps_to_run.each { db_name ->
+    apps_to_check.each { db_name ->
         if (app_dirs.containsKey(db_name)) {
             def normalised_name = db_name.replaceAll(/[\s\-]+/, '').toLowerCase()
             assert normalised_json.containsKey(normalised_name)
