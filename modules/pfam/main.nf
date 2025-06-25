@@ -19,8 +19,8 @@ process PARSE_PFAM {
     String datPath = "${dirpath.toString()}/${datfile}"
     Map<String, Map<String, Object>> dat = stockholmDatParser(datPath)  // [modelAcc: [clan: str, nested: [str]]]
 
-    Map<String, List<Match>> filteredMatches = filterMatches(hmmerMatches, dat)
-    Map<String, Map<String, Match>> processedMatches = buildFragments(filteredMatches, dat, MINLENGTH)
+    Map<String, List<Match>> filteredMatches = filterMatches(hmmerMatches, dat, MINLENGTH)
+    Map<String, Map<String, Match>> processedMatches = buildFragments(filteredMatches, dat)
 
     json = JsonOutput.toJson(processedMatches)
     new File(outputFilePath.toString()).write(json)
@@ -67,7 +67,9 @@ def decode(byte[] b) {
     }
 }
 
-def filterMatches(Map<String, Map<String, Match>> hmmerMatches, Map<String, Map<String, Object>> dat) {
+def filterMatches(Map<String, Map<String, Match>> hmmerMatches, 
+                  Map<String, Map<String, Object>> dat,
+                  int minLength) {
     /*
         Remove overlapping matches, only keeping the one with the best e-value or score.
         Pfam matches are not supposed to overlap, but some families can be evolutionary related,
@@ -76,7 +78,9 @@ def filterMatches(Map<String, Map<String, Match>> hmmerMatches, Map<String, Map<
     */
     Map<String, List<Match>> filteredMatches = [:]
     hmmerMatches.each { seqId, matches ->
-        List<Match> allMatches = flattenMatchLocations(matches)
+        List<Match> allMatches = flattenMatchLocations(matches).findAll{ m ->
+            m.locations[0].end - m.locations[0].start + 1 >= minLength 
+        }
 
         // Sort matches by evalue ASC, score DESC, length DESC, and accession ASC (last resort) 
         allMatches.sort { a, b ->
@@ -160,8 +164,7 @@ def isFullyEnclosed(location1Start, location1End, location2Start, location2End) 
 }
 
 def buildFragments(Map<String, Map<String, Match>> filteredMatches,
-                   Map<String, Map<String, Object>> dat,
-                   int MINLENGTH) {
+                   Map<String, Map<String, Object>> dat) {
     Map<String, Map<String, Match>> processedMatches = [:]
     filteredMatches.each { String seqId, List<Match> matches ->
         def aggregatedMatches = [:]
@@ -208,12 +211,10 @@ def buildFragments(Map<String, Map<String, Match>> filteredMatches,
                 location.fragments = fragments
             }
             
-            if (location.end - location.start + 1 >= MINLENGTH) {
-                if (aggregatedMatches.containsKey(match.modelAccession)) {
-                    aggregatedMatches[match.modelAccession].locations << location
-                } else {
-                    aggregatedMatches[match.modelAccession] = match
-                }
+            if (aggregatedMatches.containsKey(match.modelAccession)) {
+                aggregatedMatches[match.modelAccession].locations << location
+            } else {
+                aggregatedMatches[match.modelAccession] = match
             }
         }
         processedMatches[seqId] = aggregatedMatches
