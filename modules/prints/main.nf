@@ -164,7 +164,7 @@ process PARSE_PRINTS {
                     )
                     if (passed) {
                         filteredMatches.addAll(motifMatchesForCurrentModel)
-                        if (currentHierarchyEntry.siblingsIds.length < hierarchyEntryIdLimitation.size()) {
+                        if (currentHierarchyEntry.siblingsIds.length < hierarchyEntryIdLimitation.size() && !currentHierarchyEntry.isDomain) {
                             hierarchyEntryIdLimitation = new HashSet<>(Arrays.asList(currentHierarchyEntry.siblingsIds))
                         }
                     }
