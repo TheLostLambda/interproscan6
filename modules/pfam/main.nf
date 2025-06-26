@@ -207,7 +207,12 @@ def buildFragments(Map<String, Map<String, Match>> filteredMatches,
                     }
                 }
 
-                fragments.add(new LocationFragment(start, location.end, "N_TERMINAL_DISC"))
+                if (fragments) {
+                    fragments.add(new LocationFragment(start, location.end, "N_TERMINAL_DISC"))
+                } else {
+                    fragments.add(new LocationFragment(location.start, location.end, "CONTINUOUS"))
+                }
+
                 location.fragments = fragments
             }
             
