@@ -32,11 +32,10 @@ process RESOLVE_GENE3D {
     script:
     """
     /opt/cath-tools/cath-resolve-hits \
-        ${hmmseach_out} \
-        --input-for hmmsearch_out \
+        --input-format=hmmsearch_out \
         --min-dc-hmm-coverage=80 \
-        --worst-permissible-bitscore 25 \
-        --output-hmmer-aln > resolved.out
+        --worst-permissible-bitscore=25 \
+        --output-hmmer-aln ${hmmseach_out} > resolved.out
     """
 }
 

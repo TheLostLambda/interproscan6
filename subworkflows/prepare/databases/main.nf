@@ -20,8 +20,16 @@ workflow PREPARE_DATABASES {
     iprscan_major_minor = iprscan_version.split("\\.")[0..1].join(".")
     ch_ready = Channel.empty()
 
-    if (data_dir != null) {
-        // If data_dir is null, we only run analyses that do not depend on data files (e.g. coils)
+    if (data_dir == null) {
+        /*
+        If data_dir is not specified, we only run analyses 
+        that do not depend on data files (e.g. coils).
+        We still need to create a dummy channel for the output of VALIDATE_DATA to not be empty.
+        */
+        ch_ready = Channel.of(
+            ["default", "1.0", "/does/not/matter"],
+        )
+    } else{
         versions = InterProScan.fetchCompatibleVersions(iprscan_major_minor)
         if (versions == null) {
             log.warn """InterProScan could not retrieve compatibility information \
@@ -102,10 +110,10 @@ cannot be verified."""
         )
 
         ch_ready = ch_ready.mix(DOWNLOAD_DATABASE.out)
-        ch_ready = ch_ready.collect(flat: false)
     }
 
-    VALIDATE_DATA(ch_ready.ifEmpty { [] })
+    ch_ready = ch_ready.collect(flat: false)
+    VALIDATE_DATA(ch_ready)
 
     emit:
     versions = VALIDATE_DATA.out                // map: [ dbname: [version: <version>, path: <datapath>] ]
