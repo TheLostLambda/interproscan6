@@ -87,7 +87,8 @@ def filterMatches(Map<String, Map<String, Match>> hmmerMatches,
             (a.locations[0].evalue <=> b.locations[0].evalue) ?: 
             -(a.locations[0].score <=> b.locations[0].score) ?:
             -( (a.locations[0].end - a.locations[0].start) <=> (b.locations[0].end - b.locations[0].start) ) ?:
-            (a.modelAccession <=> b.modelAccession)
+            (a.locations[0].start <=> b.locations[0].start) ?:
+            (a.locations[0].end <=> b.locations[0].end)
         }
 
         filteredMatches[seqId] = []
