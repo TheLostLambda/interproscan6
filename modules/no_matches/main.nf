@@ -6,8 +6,7 @@ process REPORT_NO_MATCHES {
     executor 'local'
 
     input:
-    tuple val(meta), val(member_matches)
-    tuple val(meta), val(fasta)
+    tuple val(meta), val(fasta), val(member_matches)
 
     output:
     tuple val(meta), path("no_matches.json")
