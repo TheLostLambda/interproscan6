@@ -7,7 +7,7 @@ workflow MOBIDBLITE {
     main:
     RUN_MOBIDBLITE(ch_seqs)
 
-    ch_mobidblite =PARSE_MOBIDBLITE(RUN_MOBIDBLITE.out)
+    ch_mobidblite = PARSE_MOBIDBLITE(RUN_MOBIDBLITE.out)
 
     emit:
     ch_mobidblite
