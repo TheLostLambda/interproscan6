@@ -98,14 +98,21 @@ process PARSE_PRINTS {
                     double pvalue = lineData3TBHN[7] as double
                     String motifSequence = lineData3TBHN[8]
                     int motifLength = lineData3TBHN[9] as int
-                    int locationStart = (lineData3TBHN[11] as int) < 1 ? 1 : (lineData3TBHN[11] as int)
-                    // A starting position that is more than 5 figures merges into the high column
-                    String locationStartStr = locationStart.toString()
-                    if (locationStartStr.length() >= 6) {
-                        locationStartStr = locationStartStr.substring(0, 5)
+
+                    String locationStartString
+                    if (lineData3TBHN[11].length() >= 6) {
+                        // A starting position that is more than 5 figures merges into the high column
+                        locationStartString = lineData3TBHN[11].take(6)
+                    } else {
+                        locationStartString = lineData3TBHN[11]
                     }
-                    locationStart = locationStartStr as int
+
+                    int locationStart = locationStartString as int
                     int locationEnd = locationStart + motifLength - 1
+
+                    // Adjust the locationStart if the motif starts before the sequence
+                    locationStart = Math.max(1, locationStart) 
+
                     if (motifSequence.endsWith("#")) { // it overhangs the protein seq so adjust locationEnd
                         int motifSeqLength = motifSequence.length()
                         int indexCheck = motifSeqLength - 1
