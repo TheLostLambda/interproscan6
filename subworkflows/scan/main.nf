@@ -246,16 +246,16 @@ workflow SCAN_SEQUENCES {
         results = results.mix(SUPERFAMILY.out)
     }
 
-    results
-        .groupTuple()
-        .set { grouped_results }
+    ch_results = ch_seqs.join(
+        results.groupTuple()
+    )
 
-    ch_no_matches = REPORT_NO_MATCHES(grouped_results, ch_seqs)
+    ch_no_matches = REPORT_NO_MATCHES(ch_results)
 
-    merged_results = grouped_results
+    merged_results = ch_results
         .join(ch_no_matches)
-        .map { batch_idx, paths_list, no_match_path ->
-            [batch_idx, paths_list + [no_match_path]]
+        .map { meta, fasta, member_paths, no_match_path ->
+            [meta, member_paths + [no_match_path]]
         }
 
     emit:
