@@ -100,9 +100,9 @@ process PARSE_PRINTS {
                     int motifLength = lineData3TBHN[9] as int
 
                     String locationStartString
-                    if (lineData3TBHN[11].length() >= 6) {
+                    if (lineData3TBHN[11].length() > 5) {
                         // A starting position that is more than 5 figures merges into the high column
-                        locationStartString = lineData3TBHN[11].take(6)
+                        locationStartString = lineData3TBHN[11].take(5)
                     } else {
                         locationStartString = lineData3TBHN[11]
                     }
