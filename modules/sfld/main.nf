@@ -199,24 +199,6 @@ Map<String, Set<String>> getHierarchies(String filePath) {
     return hierarchies
 }
 
-List<Map> getHmmData(String outputFilePath) {
-    def matchesMap = HMMER3.parseOutput(outputFilePath.toString(), "SFLD")  // proteinMd5: modelAccession: Match
-    def hmmLengths = [:]  // modelAccession: hmmLength
-    def hmmBounds  = [:]  // proteinMd5: modelAccession: (tuple representing loc): hmmbound
-    matchesMap.each { String sequenceId, matches ->
-        matches.each { String modelAccession, Match match ->
-            match.locations.each { Location loc ->
-                def locKey = [loc.start, loc.end, loc.hmmStart, loc.hmmEnd, loc.envelopeStart, loc.envelopeEnd]
-                hmmLengths[modelAccession] = loc.hmmLength
-                hmmBounds.computeIfAbsent(sequenceId) {     [:] }
-                         .computeIfAbsent(modelAccession) { [:] }
-                         .computeIfAbsent(locKey) {         loc.hmmBounds }
-            }
-        }
-    }
-    return [hmmLengths, hmmBounds]
-}
-
 Map<String, Map<String, Match>> parseOutput(
     String outputFilePath,
     Map<String, Map> hmmerMatches
