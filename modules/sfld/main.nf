@@ -63,8 +63,8 @@ process PARSE_SFLD {
 
     exec:
     def outputFilePath = task.workDir.resolve("sfld.json")
-    def (hmmLengths, hmmBounds) = getHmmData(hmmsearch_out.toString())
-    def sequences = parseOutput(postprocess_out.toString(), hmmLengths, hmmBounds)
+    def hmmerMatches = HMMER3.parseOutput(hmmsearch_out.toString(), "SFLD")
+    def sequences = parseOutput(postprocess_out.toString(), hmmerMatches)
     def hierarchies = getHierarchies("${dirpath.toString()}/${hierarchydb}")
     SignatureLibraryRelease library = new SignatureLibraryRelease("SFLD", null)
 
@@ -219,8 +219,7 @@ List<Map> getHmmData(String outputFilePath) {
 
 Map<String, Map<String, Match>> parseOutput(
     String outputFilePath,
-    Map<String, Integer> hmmLengthsMap,
-    Map<String, Map> hmmBoundsMap
+    Map<String, Map> hmmerMatches
 ) {
     // Parse the output TSV file from the SFLD postprocess bin
     def matches = [:]
@@ -241,7 +240,9 @@ Map<String, Map<String, Match>> parseOutput(
                 break
             }
 
-            matches[sequenceId] = parseBlock(reader, sequenceId, hmmLengthsMap, hmmBoundsMap)
+            assert hmmerMatches.containsKey(sequenceId)
+            def seqHmmerMatches = hmmerMatches[sequenceId]
+            matches[sequenceId] = parseBlock(reader, sequenceId, seqHmmerMatches)
         }
     }
 
@@ -251,8 +252,7 @@ Map<String, Map<String, Match>> parseOutput(
 Map<String, Match> parseBlock(
     Reader reader,
     String sequenceId,
-    Map<String, Integer> hmmLengthsMap,
-    Map<String, Map> hmmBoundsMap     // proteinMd5: modelAccession: (tuple representing loc): hmmbound
+    Map<String, Map> seqHmmerMatches
 ) {
     SignatureLibraryRelease library = new SignatureLibraryRelease("SFLD", null)
     boolean inDomains = false
@@ -270,37 +270,34 @@ Map<String, Match> parseBlock(
             def fields = line.split(/\t/)
             assert fields.length == 15
             String modelAccession = fields[0]
-            Double seqEvalue = fields[1] as Double
-            Double seqScore = fields[2] as Double
-            Double seqBias = fields[3] as Double
+            // Double seqEvalue = fields[1] as Double
+            // Double seqScore = fields[2] as Double
+            // Double seqBias = fields[3] as Double
             Integer hmmStart = fields[4] as Integer
             Integer hmmEnd = fields[5] as Integer
-            Double domScore = fields[6] as Double
+            // Double domScore = fields[6] as Double
             int aliStart = fields[7] as int
             int aliEnd = fields[8] as int
             Integer envStart = fields[9] as Integer
             Integer envEnd = fields[10] as Integer
-            Double domCEvalue = fields[11] as Double
-            Double domIEvalue = fields[12] as Double
-            Double accuracy = fields[13] as Double
-            Double domBias = fields[14] as Double
-            Integer hmmLength = hmmLengthsMap[modelAccession]
-            def locKey = [aliStart, aliEnd, hmmStart, hmmEnd, envStart, envEnd]
-            String hmmBounds = (hmmBoundsMap.containsKey(sequenceId) &&
-                    hmmBoundsMap[sequenceId].containsKey(modelAccession) &&
-                    hmmBoundsMap[sequenceId][modelAccession] != null) ?
-                    hmmBoundsMap[sequenceId][modelAccession][locKey]?.toString() :
-                    null
-
-            if (aliStart <= aliEnd && hmmStart <= hmmEnd && envStart <= envEnd) {
-                Match match = domains.computeIfAbsent(modelAccession, k -> {
-                    Signature signature = new Signature(modelAccession, library)
-                    return new Match(modelAccession, seqEvalue, seqScore, seqBias, signature)
-                });
-                Location location = new Location(aliStart, aliEnd, hmmStart, hmmEnd, hmmLength, hmmBounds,
-                        envStart, envEnd, domIEvalue, domScore, domBias)
-                match.addLocation(location)
-            }
+            // Double domCEvalue = fields[11] as Double
+            // Double domIEvalue = fields[12] as Double
+            // Double accuracy = fields[13] as Double
+            // Double domBias = fields[14] as Double
+            assert seqHmmerMatches.containsKey(modelAccession)
+            def hmmerMatch = seqHmmerMatches[modelAccession]
+            Location loc = hmmerMatch.locations.find { it.start == aliStart 
+                                                        && it.end == aliEnd 
+                                                        && it.hmmStart == hmmStart 
+                                                        && it.hmmEnd == hmmEnd 
+                                                        && it.envelopeStart == envStart 
+                                                        && it.envelopeEnd == envEnd }
+            assert loc != null
+            Match match = domains.computeIfAbsent(modelAccession, k -> {
+                Signature signature = new Signature(modelAccession, library)
+                return new Match(modelAccession, hmmerMatch.evalue, hmmerMatch.score, hmmerMatch.bias, signature)
+            });
+            match.addLocation(loc)
         } else {
             def fields = line.split(/\s/, 3)
             assert fields.length == 2 || fields.length == 3
