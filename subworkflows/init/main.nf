@@ -46,7 +46,7 @@ workflow INIT_PIPELINE {
     if (apps_with_data.size() > 0) {
         if (datadir == null) {
             log.error "'--datadir <DATA-DIR>' is required for the selected applications."
-            edit 1
+            exit 1
         }
     
         (datadir, error) = InterProScan.resolveDirectory(datadir, false, false)
