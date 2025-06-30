@@ -14,12 +14,13 @@ def main():
     parser.add_argument("--expected", type=str, default="tests/data/output/test.faa.json", help="JSON with expected results")
     parser.add_argument("--observed", type=str, default="tests/data/output/test.faa.json", help="JSON output file from IPS6")
     parser.add_argument("--summary", action="store_true", help="Print only the summary message")
-    parser.add_argument("--format", choices=["gff3", "json", "tsv", "xml", "intermediate"], default="json", help=(
+    parser.add_argument("--format", choices=["gff3", "json", "tsv", "xml", "intermediate", "debug"], default="json", help=(
         "Format of input files.\n"
         "'gff3', 'json' [default], 'tsv', or 'xml' for final output files\n"
-        "or 'intermediate' to compare the temporary working files of InterProScan6."
+        "'intermediate' to compare the temporary working files of InterProScan6\n"
+        "or 'debug' to show information that help to debug"
     ))
-    parser.add_argument("--applications", type=str, default=None, help="Limit the comparison to a comma-separated list of applicaitons")
+    parser.add_argument("--applications", type=str, default=None, help="Limit the comparison to a comma-separated list of applications")
     args = parser.parse_args()
 
     if args.format == "gff3":
@@ -34,6 +35,9 @@ def main():
     elif args.format == "xml":
         expected = parse_xml(args.expected)
         observed = parse_xml(args.observed)
+    elif args.format == "debug":
+        expected = debug(args.expected)
+        observed = debug(args.observed)
     else:
         expected = parse_intermediate(args.expected, args.applications)
         observed = parse_intermediate(args.observed, args.applications)
@@ -133,6 +137,23 @@ def parse_intermediate(iprscan_path: str, applications: str):
                 for location in model_data.get("locations", []):
                     matches.append([upi, model_acc, location.get("start"), location.get("end")])
 
+    return [repr(nested) for nested in matches]
+
+
+def debug(iprscan_path: str):
+    """Convert all matches into lists, keeping only the data we care about"""
+    matches = []  # [[seq_id, member_db, sig_acc, loc start, loc end]]
+    with open(iprscan_path, "r") as fh:
+        iprsn_dict = json.load(fh)
+    for protein_dict in iprsn_dict["results"]:
+        md5 = protein_dict["md5"].upper()  # account for diff between iprscn 5 and 6
+        seq = protein_dict["sequence"]
+        for match in protein_dict["matches"]:
+            sig_acc = match["signature"]["accession"]
+            library = match["signature"]["signatureLibraryRelease"]["library"]
+            version = match["signature"]["signatureLibraryRelease"]["version"]
+            for loc in match["locations"]:
+                matches.append([md5, library, version, sig_acc, loc["start"], loc["end"], seq])
     return [repr(nested) for nested in matches]
 
 if __name__ == "__main__":
