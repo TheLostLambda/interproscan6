@@ -146,14 +146,13 @@ def debug(iprscan_path: str):
     with open(iprscan_path, "r") as fh:
         iprsn_dict = json.load(fh)
     for protein_dict in iprsn_dict["results"]:
-        md5 = protein_dict["md5"].upper()  # account for diff between iprscn 5 and 6
-        seq = protein_dict["sequence"]
+        sequence_id = sorted(item["id"] for item in protein_dict["xref"])[0]
         for match in protein_dict["matches"]:
             sig_acc = match["signature"]["accession"]
             library = match["signature"]["signatureLibraryRelease"]["library"]
             version = match["signature"]["signatureLibraryRelease"]["version"]
             for loc in match["locations"]:
-                matches.append([md5, library, version, sig_acc, loc["start"], loc["end"], seq])
+                matches.append([sequence_id, library, version, sig_acc, loc["start"], loc["end"]])
     return [repr(nested) for nested in matches]
 
 if __name__ == "__main__":
