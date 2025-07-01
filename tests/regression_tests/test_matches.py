@@ -6,6 +6,7 @@ import ast
 import argparse
 import difflib
 import json
+import re
 import xml.etree.ElementTree as ET
 
 
@@ -149,7 +150,7 @@ def debug(iprscan_path: str):
         sequence_id = sorted(item["id"] for item in protein_dict["xref"])[0]
         for match in protein_dict["matches"]:
             sig_acc = match["signature"]["accession"]
-            library = match["signature"]["signatureLibraryRelease"]["library"]
+            library = re.sub(r'[\s_]+', '', match["signature"]["signatureLibraryRelease"]["library"]).lower()
             version = match["signature"]["signatureLibraryRelease"]["version"]
             for loc in match["locations"]:
                 matches.append([sequence_id, library, version, sig_acc, loc["start"], loc["end"]])
