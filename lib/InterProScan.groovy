@@ -17,13 +17,11 @@ class InterProScan {
             name: "datadir",  // only required when using members with datafiles
             metavar: "<DATA-DIR>",
             description: "path to data directory.",
-            canBeNull: true
         ],
         [
             name: "applications",
             metavar: "<APPLICATIONS>",
             description: "comma-separated applications to scan the sequences with. Default: all.",
-            canBeNull: true
         ],
         [
             name: "formats",
@@ -49,7 +47,6 @@ class InterProScan {
             name: "matches-api-url",
             metavar: "<URL>",
             description: "override the default InterPro Matches API, hosted at EMBL-EBI. Use this option to specify the URL of an alternative Matches API instance.",
-            canBeNull: true
         ],
         [
             name: "no-matches-api",
@@ -89,7 +86,6 @@ class InterProScan {
             name: "skip-applications",
             metavar: "<APPLICATIONS>",
             description: "comma-separated applications to exclude from analysis. Default: none.",
-            canBeNull: true
         ],
         [
             name: "skip-interpro",
@@ -150,7 +146,7 @@ class InterProScan {
             if (allowedParams.contains(kebabParamName.toLowerCase())) {
                 def paramObj = this.PARAMS.find { it.name.toLowerCase() == kebabParamName.toLowerCase() }
                 assert paramObj != null
-                if (paramObj?.metavar != null && !paramObj?.canBeNull && (paramValue instanceof Boolean)) {
+                if (paramObj?.metavar != null && paramValue != null && (paramValue instanceof Boolean)) {
                     log.error "'--${paramObj.name} ${paramObj.metavar}' is mandatory and cannot be empty."
                     System.exit(1)
                 }
