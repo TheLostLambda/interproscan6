@@ -65,6 +65,10 @@ class InterProScan {
             description: "include pathway mapping in output files."
         ],
         [
+            name: "globus",
+            description: "use the Globus mirror of the EMBL-EBI FTP site to download InterProScan data files.",
+        ],
+        [
             name: "help",
             description: "print the help message and exit."
         ],
@@ -118,6 +122,7 @@ class InterProScan {
     ]
 
     static final String FTP_URL = "https://ftp.ebi.ac.uk/pub/software/unix/iprscan/6"
+    static final String GLOBUS_URL = "https://g-a8b222.dd271.03c0.data.globus.org/pub/software/unix/iprscan/6"
 
     static void validateParams(params, log) {
         def allowedParams = this.PARAMS.collect { it.name.toLowerCase() }
@@ -320,8 +325,9 @@ class InterProScan {
         return version
     }
 
-    static List<String> fetchCompatibleVersions(String majorMinorVersion) {
-        String url = "${InterProScan.FTP_URL}/${majorMinorVersion}/versions.json"
+    static List<String> fetchCompatibleVersions(String majorMinorVersion, boolean useGlobus = false) {
+        String baseUrl = useGlobus ? GLOBUS_URL : FTP_URL
+        String url = "${baseUrl}/${majorMinorVersion}/versions.json"
         Map versions = HTTPRequest.fetch(url, null, 2, false)
         return versions?.interpro?.collect { it?.toString() } ?: null
     }

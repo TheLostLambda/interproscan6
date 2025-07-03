@@ -49,7 +49,8 @@ workflow {
         interpro_version,
         workflow.manifest.version,
         params.goterms,
-        params.pathways
+        params.pathways,
+        params.globus
     )
     db_releases = PREPARE_DATABASES.out.versions
     interproscan_version = PREPARE_DATABASES.out.iprscan_major_minor

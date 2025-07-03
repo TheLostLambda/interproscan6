@@ -11,6 +11,7 @@ process DOWNLOAD {
     input:
     tuple val(name), val(arcname), val(version), val(skip), val(path)
     val iprscan_version
+    val use_globus
     path outdir
 
     output:
@@ -21,9 +22,10 @@ process DOWNLOAD {
         """
         """
     } else {
+        def base_url = use_globus ? InterProScan.GLOBUS_URL : InterProScan.FTP_URL
         """
-        curl -OJ ${InterProScan.FTP_URL}/${iprscan_version}/${arcname}/${arcname}-${version}.tar.gz
-        curl -OJ ${InterProScan.FTP_URL}/${iprscan_version}/${arcname}/${arcname}-${version}.tar.gz.md5
+        curl -OJ ${base_url}/${iprscan_version}/${arcname}/${arcname}-${version}.tar.gz
+        curl -OJ ${base_url}/${iprscan_version}/${arcname}/${arcname}-${version}.tar.gz.md5
         md5sum -c ${arcname}-${version}.tar.gz.md5 || { echo "Error: MD5 checksum failed" >&2; exit 1; }
         tar -C ${outdir} -zxf ${arcname}-${version}.tar.gz
         rm ${arcname}-${version}.tar.gz*
