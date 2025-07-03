@@ -252,20 +252,12 @@ Map<String, Match> parseBlock(
             def fields = line.split(/\t/)
             assert fields.length == 15
             String modelAccession = fields[0]
-            // Double seqEvalue = fields[1] as Double
-            // Double seqScore = fields[2] as Double
-            // Double seqBias = fields[3] as Double
             Integer hmmStart = fields[4] as Integer
             Integer hmmEnd = fields[5] as Integer
-            // Double domScore = fields[6] as Double
             int aliStart = fields[7] as int
             int aliEnd = fields[8] as int
             Integer envStart = fields[9] as Integer
             Integer envEnd = fields[10] as Integer
-            // Double domCEvalue = fields[11] as Double
-            // Double domIEvalue = fields[12] as Double
-            // Double accuracy = fields[13] as Double
-            // Double domBias = fields[14] as Double
             assert seqHmmerMatches.containsKey(modelAccession)
             def hmmerMatch = seqHmmerMatches[modelAccession]
             Location loc = hmmerMatch.locations.find { it.start == aliStart 
