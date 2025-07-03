@@ -43,6 +43,7 @@ process PREPARE_LOOKUP {
 }
 
 process LOOKUP_MATCHES {
+    maxForks 1
     label    'tiny'
     executor 'local'
 
@@ -61,7 +62,7 @@ process LOOKUP_MATCHES {
     def noLookupFasta = new StringBuilder()
 
     Map<String, String> sequences = FastaFile.parse(fasta.toString())  // [md5: sequence]
-    def md5List = sequences.keySet().toList()
+    def md5List = sequences.keySet().toList().sort()
     def chunks = md5List.collate(chunkSize)
 
     String baseUrl = HTTPRequest.sanitizeURL(url.toString())
