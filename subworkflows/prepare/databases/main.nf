@@ -15,6 +15,7 @@ workflow PREPARE_DATABASES {
     iprscan_version
     add_goterms
     add_pathways
+    use_globus
 
     main:
     iprscan_major_minor = iprscan_version.split("\\.")[0..1].join(".")
@@ -30,10 +31,15 @@ workflow PREPARE_DATABASES {
             ["default", "1.0", "/does/not/matter"],
         )
     } else{
-        versions = InterProScan.fetchCompatibleVersions(iprscan_major_minor)
+        versions = InterProScan.fetchCompatibleVersions(iprscan_major_minor, use_globus)
         if (versions == null) {
-            log.warn """InterProScan could not retrieve compatibility information \
-for InterPro data versions from EMBL-EBI FTP."""
+            if (use_globus) {
+                log.warn """InterProScan could not retrieve compatibility information \
+for InterPro data versions."""
+            } else {
+                log.warn """InterProScan could not retrieve compatibility information \
+for InterPro data versions from the EMBL-EBI FTP. Try using the --globus option to use the Globus mirror instead."""
+            }
 
             if (interpro_version == "latest") {
                 highest_version = InterProScan.findLocalHighestVersionDir("${data_dir}/interpro")
@@ -85,6 +91,7 @@ cannot be verified."""
             DOWNLOAD_INTERPRO(
                 ["interpro", "interpro", interpro_version, false, "${data_dir}/interpro/${interpro_version}"],
                 iprscan_major_minor,
+                use_globus,
                 data_dir
             )
 
@@ -106,6 +113,7 @@ cannot be verified."""
         DOWNLOAD_DATABASE(
             ch_to_download,
             iprscan_major_minor,
+            use_globus,
             data_dir
         )
 
