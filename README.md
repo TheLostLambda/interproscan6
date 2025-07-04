@@ -8,8 +8,11 @@
 
 **InterProScan** is the command‑line tool that allows you to scan protein or nucleotide sequences against the InterPro member‑database signatures in a single workflow. Researchers with novel sequences can use InterProScan to annotate their data with family classifications, domain architectures and site predictions.
 
-> [!CAUTION]
-> InterProScan 6 is under active development and may be unstable.
+> [!WARNING]
+> **InterProScan 6 is now in beta**.
+> The core functionality is complete, and results have been benchmarked against InterProScan 5 with high similarity across all analyses.
+>
+> We encourage users to test this version and report any issues or suggestions. Minor changes and refinements may still occur before the final release.
 
 ## Installation
 
@@ -22,7 +25,7 @@ Before you begin, install:
     * [Apptainer](https://apptainer.org/)
 
 You don't need anything else, Nextflow will download the workflow from GitHub, 
-and required data can be automatically downloaded when running InterProScan.
+and required data are automatically downloaded when running InterProScan.
 
 > [!IMPORTANT]  
 > Phobius, SignalP and DeepTMHMM require separate licenses and downloads. See [Licensed analyses](#licensed-analyses).
@@ -31,37 +34,36 @@ and required data can be automatically downloaded when running InterProScan.
 
 ### Quickstart
 
-If you have Docker and Nextflow installed, run the following command to test InterProScan and download required data:
+If you have Docker and Nextflow installed, you can quickly test InterProScan and download the required data by running:
 
 ```sh
 nextflow run ebi-pf-team/interproscan6 \
-  -r 6.0.0-alpha \
+  -r 6.0.0-beta \
   -profile docker,test \
   --datadir data \
-  --interpro latest \
-  --download
+  --interpro latest
 ```
 
 Explanation of parameters:
 
-* `-r 6.0.0-alpha`: Specify the version of InterProScan to use, in this case version `6.0.0-alpha`. For consistent and reproducible results, we strongly recommend always specifying a version.
+* `-r 6.0.0-beta`: Specifies the version of InterProScan to run. We strongly recommend always specifying a version to ensure consistent and reproducible results.
 * `-profile docker,test`:
-  * `docker`: Execute tasks in Docker containers.
-  * `test`: Run InterProScan with a small example FASTA file included in the workflow.
-* `--datadir data`: Set `data` as the directory for storing all required InterPro and member database files. The directory is created automatically if it doesn't exist.
-* `--interpro latest`: Use the most recent InterPro release.
-* `--download`: Download any missing metadata and database files into the specified `--datadir`
+  * `docker`: Executes tasks in Docker containers.
+  * `test`: Uses a small test FASTA file included in the workflow.
+* `--datadir data`: Sets the `data` directory as the location to store InterPro and member database files. The directory will be created automatically if it doesn't exist, and required files will be downloaded into it.
+* `--interpro latest`: Uses the latest available InterPro data release.
 
 > [!NOTE]
-> `--interpro latest` is the default, but for reproducibility we strongly recommend pinning the release, e.g. `--interpro 105.0`.
+> While `--interpro latest` is the default, we strongly recommend pinning a specific version (e.g. `--interpro 106.0`) to ensure reproducibility.
 
-After completion, you'll find three output files in your working directory:
+After the run completes, the following files will be created in your working directory:
 
-* `test.faa.json`: full annotations (JSON)
-* `test.faa.tsv`: tabular summary (TSV)
-* `test.faa.xml`: full annotations (XML)
+* `test.faa.gff3`: annotations in GFF3 format
+* `test.faa.json`: Full annotations in JSON format
+* `test.faa.tsv`: Tabular summary of matches (TSV format)
+* `test.faa.xml`: Full annotations in XML format
 
-The JSON and XML outputs are more comprehensive; the TSV is a concise summary.
+The JSON and XML outputs are more comprehensive, the TSV is a concise summary, and the GFF3 is a standard format suitable for genome browsers and annotation pipelines.
 
 ### Scanning your own sequences
 
@@ -69,7 +71,7 @@ To annotate your own sequences FASTA file, omit the `test` profile and specify `
 
 ```sh
 nextflow run ebi-pf-team/interproscan6 \
-  -r 6.0.0-alpha \
+  -r 6.0.0-beta \
   -profile docker \
   --datadir data \
   --input /path/to/sequences.faa
@@ -79,7 +81,7 @@ For nucleotide sequences, add `--nucleic`:
 
 ```sh
 nextflow run ebi-pf-team/interproscan6 \
-  -r 6.0.0-alpha \
+  -r 6.0.0-beta \
   -profile docker \
   --datadir data \
   --input /path/to/sequences.fna \
@@ -92,11 +94,11 @@ To run only certain analyses, e.g. Pfam and MobiDB-lite:
 
 ```sh
 nextflow run ebi-pf-team/interproscan6 \
-  -r 6.0.0-alpha \
+  -r 6.0.0-beta \
   -profile docker \
   --datadir data \
-  --applications Pfam,MobiDB-lite \
-  --input your.fasta
+  --input /path/to/sequences.faa \
+  --applications Pfam,MobiDB-lite
 ```
 
 > [!TIP]
@@ -107,14 +109,14 @@ nextflow run ebi-pf-team/interproscan6 \
 
 ### Including GO terms and pathway annotations
 
-To include Gene Ontology terms and pathway annotations in the JSON and XML outputs:
+To include Gene Ontology terms and pathway annotations:
 
 ```sh
 nextflow run ebi-pf-team/interproscan6 \
-  -r 6.0.0-alpha \
+  -r 6.0.0-beta \
   -profile docker \
   --datadir data \
-  --input your.fasta \
+  --input /path/to/sequences.faa \
   --goterms \
   --pathways
 ```
@@ -127,10 +129,10 @@ Most HPC systems do not support Docker, but they often support Singularity or Ap
 
 ```sh
 nextflow run ebi-pf-team/interproscan6 \
-  -r 6.0.0-alpha \
+  -r 6.0.0-beta \
   -profile singularity,slurm \
-  --datadir /path/to/data \
-  --input your.fasta
+  --datadir data \
+  --input /path/to/sequences.faa
 ```
 
 > [!IMPORTANT]
@@ -195,7 +197,7 @@ echo "${PWD}/DeepTMHMM
 
 #### Phobius 1.01
 
-> [!WARNING]  
+> [!IMPORTANT]  
 > Phobius does not support certain non-standard or ambiguous residues. Any sequence containing pyrrolysine (one-letter code `O`), Asx (Asp/Asn ambiguity, `B`), Glx (Glu/Gln ambiguity, `Z`) or Xle (Leu/Ile ambiguity, `J`) will be skipped by Phobius but will continue to be processed normally by all other applications.
 
 Download a copy of Phobius 1.01 [from Erik Sonnhammer's website](https://software.sbc.su.se/phobius.html), then extract:
@@ -254,10 +256,10 @@ params {
 
 ```sh
 nextflow run ebi-pf-team/interproscan6 \
-  -r 6.0.0-alpha \
+  -r 6.0.0-beta \
   -profile docker \
   -c licensed.conf \
-  --input your.fasta \
+  --input /path/to/sequences.faa \
   --applications phobius
 ```
 
@@ -288,16 +290,16 @@ And run with:
 
 ```sh
 nextflow run ebi-pf-team/interproscan6 \
-  -r 6.0.0-alpha \
+  -r 6.0.0-beta \
   -profile docker \
   -c licensed.conf \
-  --input your.fasta \
+  --input /path/to/sequences.faayour.fasta \
   --applications deeptmhmm,phobius,signalp_euk,signalp_prok \
-  --offline
+  --no-matches-api
 ```
 
 > [!WARNING]  
-> As DeepTMHMM 1.0 and SignalP 6.0 predictions are not yet available in the [Matches API](https://www.ebi.ac.uk/interpro/matches/api/), the pre-calculated matches lookup must be disabled with `--offline`.
+> As DeepTMHMM 1.0 and SignalP 6.0 predictions are not yet available in the [Matches API](https://www.ebi.ac.uk/interpro/matches/api/), the pre-calculated matches lookup must be disabled with `--no-matches-api`.
 
 > [!NOTE]  
 > Running both `signalp_euk` and `signalp_prok` will execute SignalP twice, once with eukaryotic post-processing and once without. Choose the mode best suited to your dataset.
