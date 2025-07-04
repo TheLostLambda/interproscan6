@@ -8,6 +8,8 @@ include { SCAN_SEQUENCES     } from "./subworkflows/scan"
 include { COMBINE            } from "./subworkflows/combine"
 include { OUTPUT             } from "./subworkflows/output"
 
+import java.time.format.DateTimeFormatter
+
 workflow {
     println "# ${workflow.manifest.name} ${workflow.manifest.version}"
     println "# ${workflow.manifest.description}\n"
@@ -49,8 +51,7 @@ workflow {
         interpro_version,
         workflow.manifest.version,
         params.goterms,
-        params.pathways,
-        params.globus
+        params.pathways
     )
     db_releases = PREPARE_DATABASES.out.versions
     interproscan_version = PREPARE_DATABASES.out.iprscan_major_minor
@@ -129,4 +130,16 @@ workflow {
         workflow.manifest.version,
         db_releases
     )
+
+    workflow.onComplete = {
+        if (workflow.success) {
+            println "\nInterProScan completed successfully"
+            println "Results available at: ${outprefix}.*"
+            if (workflow.duration.toSeconds() <= 60) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm:ss");
+                println "Completed at        : ${workflow.complete.format(formatter)}"
+                println "Duration            : ${workflow.duration}"
+            }
+        }        
+    }
 }
