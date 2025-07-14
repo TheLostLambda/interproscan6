@@ -40,7 +40,9 @@ process WRITE_JSON {
                         generator.writeStringField("interproscan-version", interproscan_version)
                         generator.writeStringField("interpro-version", db_releases?.interpro?.version)
                         generator.writeFieldName("results")
+                        generator.writeStartArray()
                         writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                        generator.writeEndArray()
                         generator.writeEndObject()
                         generator.writeRaw('\n')
                     }
@@ -50,7 +52,9 @@ process WRITE_JSON {
                         generator.writeStringField("interproscan-version", interproscan_version)
                         generator.writeStringField("interpro-version", db_releases?.interpro?.version)
                         generator.writeFieldName("results")
+                        generator.writeStartArray()
                         writeProtein(proteinMd5, proteinMatches, generator, db)
+                        generator.writeEndArray()
                         generator.writeEndObject()
                         generator.writeRaw('\n')
                     }
