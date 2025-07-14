@@ -75,12 +75,14 @@ def parse_jsonl(iprscan_path: str):
     matches = []  # [[md5, sig_acc, loc start, loc end]]
     with open(iprscan_path, "r") as fh:
         for line in map(str.rstrip, fh):
-            protein_dict = json.loads(line)["results"]
-            md5 = protein_dict["md5"].upper()
-            for match in protein_dict["matches"]:
-                sig_acc = match["signature"]["accession"]
-                for loc in match["locations"]:
-                    matches.append([md5, sig_acc, loc["start"], loc["end"]])
+            iprsn_dict = json.loads(line)
+
+            for protein_dict in iprsn_dict["results"]:
+                md5 = protein_dict["md5"].upper()
+                for match in protein_dict["matches"]:
+                    sig_acc = match["signature"]["accession"]
+                    for loc in match["locations"]:
+                        matches.append([md5, sig_acc, loc["start"], loc["end"]])
     return [repr(nested) for nested in matches]
 
 
