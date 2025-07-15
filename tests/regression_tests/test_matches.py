@@ -85,7 +85,9 @@ def parse_gff3(iprscan_path: str):
     matches = []
     with open(iprscan_path, "r") as fh:
         for line in fh:
-            if not line.startswith("#"):
+            if line.startswith("##FASTA"):
+                break
+            elif not line.startswith("#"):
                 data = line.split("\t")
                 matches.append([data[0], data[1], data[3], data[4], data[8]])
     return [repr(nested) for nested in matches]
