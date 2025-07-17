@@ -30,6 +30,7 @@ process WRITE_JSON {
     streamJson(output_file.toString(), jacksonMapper, jsonlines) { JsonGenerator generator ->
         if (jsonlines) {
             generator.setRootValueSeparator(new SerializedString(''))
+            Set<String> seenNucleicMd5s = new HashSet<>()
             matches_files.each { matchFile ->
                 Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
 
@@ -41,7 +42,10 @@ process WRITE_JSON {
                         generator.writeStringField("interpro-version", db_releases?.interpro?.version)
                         generator.writeFieldName("results")
                         generator.writeStartArray()
-                        writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                        if (!seenNucleicMd5s.contains(nucleicMd5)) {
+                            writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                            seenNucleicMd5s.add(nucleicMd5)
+                        }
                         generator.writeEndArray()
                         generator.writeEndObject()
                         generator.writeRaw('\n')
@@ -70,15 +74,18 @@ process WRITE_JSON {
             generator.writeStringField("interpro-version", db_releases?.interpro?.version)
             generator.writeFieldName("results")
             generator.writeStartArray()  // start of results [...
+            Set<String> seenNucleicMd5s = new HashSet<>()
             matches_files.each { matchFile ->
+                Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
                 if (nucleic) {  // input was nucleic acid sequence
-                    Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
                     nucleicToProteinMd5 = db.groupProteins(proteins)
                     nucleicToProteinMd5.each { String nucleicMd5, Set<String> proteinMd5s ->
-                        writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                        if (!seenNucleicMd5s.contains(nucleicMd5)) {
+                            writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                            seenNucleicMd5s.add(nucleicMd5)
+                        }
                     }
                 } else {  // input was protein sequences
-                    Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
                     proteins.each { String proteinMd5, Map proteinMatches ->
                         writeProtein(proteinMd5, proteinMatches, generator, db)
                     }
@@ -103,7 +110,7 @@ def writeNucleic(String nucleicMd5, Set<String> proteinMd5s, Map proteinMatches,
     String sequence = ntSeqData[0].sequence
     jsonWriter.writeStringField("sequence", sequence)
     jsonWriter.writeStringField("md5", nucleicMd5)
-    
+
     // 2. {..., "crossReferences": [{ntSeqXref}, {ntSeqXref}]}
     jsonWriter.writeFieldName("crossReferences")
     writeXref(ntSeqData, jsonWriter)
@@ -241,347 +248,347 @@ def writeMatch(String proteinMd5, Map match, JsonGenerator jsonWriter) {
 
 def writeDefault(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "evalue"   : match.evalue,
-        "score"    : match.score,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "hmmStart"          : loc.hmmStart,
-                "hmmEnd"            : loc.hmmEnd,
-                "hmmLength"         : loc.hmmLength,
-                "hmmBounds"         : Location.getHmmBounds(loc.hmmBounds),
-                "evalue"            : loc.evalue,
-                "score"             : loc.score,
-                "envelopeStart"     : loc.envelopeStart,
-                "envelopeEnd"       : loc.envelopeEnd,
-                "location-fragments": formatFragments(loc.fragments)
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "evalue"   : match.evalue,
+            "score"    : match.score,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "hmmStart"          : loc.hmmStart,
+                        "hmmEnd"            : loc.hmmEnd,
+                        "hmmLength"         : loc.hmmLength,
+                        "hmmBounds"         : Location.getHmmBounds(loc.hmmBounds),
+                        "evalue"            : loc.evalue,
+                        "score"             : loc.score,
+                        "envelopeStart"     : loc.envelopeStart,
+                        "envelopeEnd"       : loc.envelopeEnd,
+                        "location-fragments": formatFragments(loc.fragments)
+                ]
+            }
     ])
 }
 
 def writeDefaultNoHmmBounds(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "evalue"   : match.evalue,
-        "score"    : match.score,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "hmmStart"          : loc.hmmStart,
-                "hmmEnd"            : loc.hmmEnd,
-                "hmmLength"         : loc.hmmLength,
-                "evalue"            : loc.evalue,
-                "score"             : loc.score,
-                "envelopeStart"     : loc.envelopeStart,
-                "envelopeEnd"       : loc.envelopeEnd,
-                "location-fragments": formatFragments(loc.fragments)
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "evalue"   : match.evalue,
+            "score"    : match.score,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "hmmStart"          : loc.hmmStart,
+                        "hmmEnd"            : loc.hmmEnd,
+                        "hmmLength"         : loc.hmmLength,
+                        "evalue"            : loc.evalue,
+                        "score"             : loc.score,
+                        "envelopeStart"     : loc.envelopeStart,
+                        "envelopeEnd"       : loc.envelopeEnd,
+                        "location-fragments": formatFragments(loc.fragments)
+                ]
+            }
     ])
 }
 
 def writeCDD(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "evalue"   : match.evalue,
-        "score"    : match.score,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "evalue"            : loc.evalue,
-                "score"             : loc.score,
-                "location-fragments": formatFragments(loc.fragments),
-                "sites"             : loc.sites.collect { site ->
-                    [
-                        "description"  : site.description,
-                        "numLocations" : site.numLocations,
-                        "siteLocations": site.siteLocations
-                    ]
-                }
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "evalue"   : match.evalue,
+            "score"    : match.score,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "evalue"            : loc.evalue,
+                        "score"             : loc.score,
+                        "location-fragments": formatFragments(loc.fragments),
+                        "sites"             : loc.sites.collect { site ->
+                            [
+                                    "description"  : site.description,
+                                    "numLocations" : site.numLocations,
+                                    "siteLocations": site.siteLocations
+                            ]
+                        }
+                ]
+            }
     ])
 }
 
 def writeMinimalist(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "location-fragments": formatFragments(loc.fragments)
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "location-fragments": formatFragments(loc.fragments)
+                ]
+            }
     ])
 }
 
 def writeHAMAP(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "score"             : loc.score,
-                "cigarAlignment"    : loc.cigarAlignment,
-                "alignment"         : loc.targetAlignment,
-                "location-fragments": formatFragments(loc.fragments)
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "score"             : loc.score,
+                        "cigarAlignment"    : loc.cigarAlignment,
+                        "alignment"         : loc.targetAlignment,
+                        "location-fragments": formatFragments(loc.fragments)
+                ]
+            }
     ])
 }
 
 def writeMobiDBlite(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "location-fragments": formatFragments(loc.fragments),
-                "sequence-feature"  : loc.sequenceFeature
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "location-fragments": formatFragments(loc.fragments),
+                        "sequence-feature"  : loc.sequenceFeature
+                ]
+            }
     ])
 }
 
 def writePANTHER(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature"      : match.signature,
-        "model-ac"       : match.treegrafter.subfamilyAccession ?: match.modelAccession,
-        "name"           : match.treegrafter.subfamilyDescription,
-        "evalue"         : match.evalue,
-        "score"          : match.score,
-        "proteinClass"   : match.treegrafter.proteinClass,
-        "graftPoint"     : match.treegrafter.graftPoint,
-        "ancestralNode": match.treegrafter.ancestralNodeID,
-        "goXRefs"        : match.treegrafter.goXRefs,
-        "locations"      : match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "hmmStart"          : loc.hmmStart,
-                "hmmEnd"            : loc.hmmEnd,
-                "hmmLength"         : loc.hmmLength,
-                "hmmBounds"         : Location.getHmmBounds(loc.hmmBounds),
-                "envelopeStart"     : loc.envelopeStart,
-                "envelopeEnd"       : loc.envelopeEnd,
-                "location-fragments": formatFragments(loc.fragments)
-            ]
-        }
+            "signature"      : match.signature,
+            "model-ac"       : match.treegrafter.subfamilyAccession ?: match.modelAccession,
+            "name"           : match.treegrafter.subfamilyDescription,
+            "evalue"         : match.evalue,
+            "score"          : match.score,
+            "proteinClass"   : match.treegrafter.proteinClass,
+            "graftPoint"     : match.treegrafter.graftPoint,
+            "ancestralNode": match.treegrafter.ancestralNodeID,
+            "goXRefs"        : match.treegrafter.goXRefs,
+            "locations"      : match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "hmmStart"          : loc.hmmStart,
+                        "hmmEnd"            : loc.hmmEnd,
+                        "hmmLength"         : loc.hmmLength,
+                        "hmmBounds"         : Location.getHmmBounds(loc.hmmBounds),
+                        "envelopeStart"     : loc.envelopeStart,
+                        "envelopeEnd"       : loc.envelopeEnd,
+                        "location-fragments": formatFragments(loc.fragments)
+                ]
+            }
     ])
 }
 
 def writePirsr(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "evalue"   : match.evalue,
-        "score"    : match.score,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "hmmStart"          : loc.hmmStart,
-                "hmmEnd"            : loc.hmmEnd,
-                "hmmLength"         : loc.hmmLength,
-                "score"             : loc.score,
-                "envelopeStart"     : loc.envelopeStart,
-                "envelopeEnd"       : loc.envelopeEnd,
-                "location-fragments": formatFragments(loc.fragments),
-                "sites"             : loc.sites.collect { site ->
-                    [
-                        "description": site.description,
-                        "numLocations": site.numLocations,
-                        "siteLocations": site.siteLocations.collect { siteLoc ->
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "evalue"   : match.evalue,
+            "score"    : match.score,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "hmmStart"          : loc.hmmStart,
+                        "hmmEnd"            : loc.hmmEnd,
+                        "hmmLength"         : loc.hmmLength,
+                        "score"             : loc.score,
+                        "envelopeStart"     : loc.envelopeStart,
+                        "envelopeEnd"       : loc.envelopeEnd,
+                        "location-fragments": formatFragments(loc.fragments),
+                        "sites"             : loc.sites.collect { site ->
                             [
-                                "start"  : siteLoc.start,
-                                "end"    : siteLoc.end,
-                                "residue": siteLoc.residue
+                                    "description": site.description,
+                                    "numLocations": site.numLocations,
+                                    "siteLocations": site.siteLocations.collect { siteLoc ->
+                                        [
+                                                "start"  : siteLoc.start,
+                                                "end"    : siteLoc.end,
+                                                "residue": siteLoc.residue
+                                        ]
+                                    },
                             ]
-                        },
-                    ]
-                } // end of "sites"
-            ]
-        } // end of "locations"
+                        } // end of "sites"
+                ]
+            } // end of "locations"
     ])
 }
 
 def writePRINTS(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "evalue"   : match.evalue,
-        "graphscan": match.graphscan,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "pvalue"            : loc.pvalue,
-                "score"             : loc.score,
-                "motifNumber"       : loc.motifNumber,
-                "location-fragments": formatFragments(loc.fragments)
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "evalue"   : match.evalue,
+            "graphscan": match.graphscan,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "pvalue"            : loc.pvalue,
+                        "score"             : loc.score,
+                        "motifNumber"       : loc.motifNumber,
+                        "location-fragments": formatFragments(loc.fragments)
+                ]
+            }
     ])
 }
 
 def writePROSITEpatterns(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "level"             : loc.level,
-                "cigarAlignment"    : loc.cigarAlignment,
-                "alignment"         : loc.targetAlignment,
-                "location-fragments": formatFragments(loc.fragments)
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "level"             : loc.level,
+                        "cigarAlignment"    : loc.cigarAlignment,
+                        "alignment"         : loc.targetAlignment,
+                        "location-fragments": formatFragments(loc.fragments)
+                ]
+            }
     ])
 }
 
 def writePROSITEprofiles(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "score"             : loc.score,
-                "cigarAlignment"    : loc.cigarAlignment,
-                "alignment"         : loc.targetAlignment,
-                "location-fragments": formatFragments(loc.fragments)
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "score"             : loc.score,
+                        "cigarAlignment"    : loc.cigarAlignment,
+                        "alignment"         : loc.targetAlignment,
+                        "location-fragments": formatFragments(loc.fragments)
+                ]
+            }
     ])
 }
 
 def writeSignalp(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "pvalue"            : loc.score,
-                "location-fragments": formatFragments(loc.fragments),
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "pvalue"            : loc.score,
+                        "location-fragments": formatFragments(loc.fragments),
+                ]
+            }
     ])
 }
 
 def writeSFLD(Map match, JsonGenerator jsonWriter) {
-     jsonWriter.writeObject([
-         "signature": match.signature,
-         "model-ac" : match.modelAccession,
-         "evalue"   : match.evalue,
-         "score"    : match.score,
-         "locations": match.locations.collect { loc ->
-             [
-                 "start"             : loc.start,
-                 "end"               : loc.end,
-                 "representative"    : loc.representative,
-                 "hmmStart"          : loc.hmmStart,
-                 "hmmEnd"            : loc.hmmEnd,
-                 "hmmLength"         : loc.hmmLength,
-                 "score"             : loc.score,
-                 "envelopeStart"     : loc.envelopeStart,
-                 "envelopeEnd"       : loc.envelopeEnd,
-                 "location-fragments": formatFragments(loc.fragments),
-                 "sites"             : loc.sites.collect { site ->
-                     [
-                         "description": site.description,
-                         "numLocations": site.numLocations,
-                         "siteLocations": site.siteLocations.collect { siteLoc ->
-                             [
-                                 "start"  : siteLoc.start,
-                                 "end"    : siteLoc.end,
-                                 "residue": siteLoc.residue
-                             ]
-                         },
-                    ]
-                } // end of "sites"
-            ]
-        } // end of "locations"
+    jsonWriter.writeObject([
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "evalue"   : match.evalue,
+            "score"    : match.score,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "hmmStart"          : loc.hmmStart,
+                        "hmmEnd"            : loc.hmmEnd,
+                        "hmmLength"         : loc.hmmLength,
+                        "score"             : loc.score,
+                        "envelopeStart"     : loc.envelopeStart,
+                        "envelopeEnd"       : loc.envelopeEnd,
+                        "location-fragments": formatFragments(loc.fragments),
+                        "sites"             : loc.sites.collect { site ->
+                            [
+                                    "description": site.description,
+                                    "numLocations": site.numLocations,
+                                    "siteLocations": site.siteLocations.collect { siteLoc ->
+                                        [
+                                                "start"  : siteLoc.start,
+                                                "end"    : siteLoc.end,
+                                                "residue": siteLoc.residue
+                                        ]
+                                    },
+                            ]
+                        } // end of "sites"
+                ]
+            } // end of "locations"
     ])
 }
 
 def writeSMART(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "evalue"   : match.evalue,
-        "score"     : match.score,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "hmmStart"          : loc.hmmStart,
-                "hmmEnd"            : loc.hmmEnd,
-                "hmmLength"         : loc.hmmLength,
-                "hmmBounds"         : Location.getHmmBounds(loc.hmmBounds),
-                "evalue"            : loc.evalue,
-                "score"             : loc.score,
-                "location-fragments": formatFragments(loc.fragments)
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "evalue"   : match.evalue,
+            "score"     : match.score,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "hmmStart"          : loc.hmmStart,
+                        "hmmEnd"            : loc.hmmEnd,
+                        "hmmLength"         : loc.hmmLength,
+                        "hmmBounds"         : Location.getHmmBounds(loc.hmmBounds),
+                        "evalue"            : loc.evalue,
+                        "score"             : loc.score,
+                        "location-fragments": formatFragments(loc.fragments)
+                ]
+            }
     ])
 }
 
 def writeSUPERFAMILY(Map match, JsonGenerator jsonWriter) {
     jsonWriter.writeObject([
-        "signature": match.signature,
-        "model-ac" : match.modelAccession,
-        "evalue"   : match.evalue,
-        "locations": match.locations.collect { loc ->
-            [
-                "start"             : loc.start,
-                "end"               : loc.end,
-                "representative"    : loc.representative,
-                "hmmLength"         : loc.hmmLength,
-                "location-fragments": formatFragments(loc.fragments)
-            ]
-        }
+            "signature": match.signature,
+            "model-ac" : match.modelAccession,
+            "evalue"   : match.evalue,
+            "locations": match.locations.collect { loc ->
+                [
+                        "start"             : loc.start,
+                        "end"               : loc.end,
+                        "representative"    : loc.representative,
+                        "hmmLength"         : loc.hmmLength,
+                        "location-fragments": formatFragments(loc.fragments)
+                ]
+            }
     ])
 }
 
 def formatFragments(fragments) {
     return fragments.collect { frag ->
         [
-            "start"    : frag.start,
-            "end"      : frag.end,
-            "dc-status": frag.dcStatus
-        ]   
+                "start"    : frag.start,
+                "end"      : frag.end,
+                "dc-status": frag.dcStatus
+        ]
     }
 }
 

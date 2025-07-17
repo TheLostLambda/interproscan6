@@ -24,15 +24,18 @@ process WRITE_XML {
     SeqDB db = new SeqDB(seq_db_file.toString())
 
     xml."results"("interproscan-version": interproscan_version, "interpro-version": db_releases?.interpro?.version) {
+        Set<String> seenNucleicMd5s = new HashSet<>()
         matches_files.each { matchFile ->
+            Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
             if (nucleic) {
-                Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
                 nucleicToProteinMd5 = db.groupProteins(proteins)
                 nucleicToProteinMd5.each { String nucleicMd5, Set<String> proteinMd5s ->
-                    addNucleotideNode(nucleicMd5, proteinMd5s, proteins, xml, db)
+                    if (!seenNucleicMd5s.contains(nucleicMd5)) {
+                        addNucleotideNode(nucleicMd5, proteinMd5s, proteins, xml, db)
+                        seenNucleicMd5s.add(nucleicMd5)
+                    }
                 }
             } else {
-                Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
                 proteins.each { String proteinMd5, Map proteinMatches ->
                     addProteinNodes(proteinMd5, proteinMatches, xml, db)
                 }
