@@ -25,6 +25,8 @@ process WRITE_GFF3 {
         tempFastaFile.withWriter { fastaWriter ->
             fastaWriter.writeLine("##FASTA")
 
+            Set<String> seenNucleicMd5s = new HashSet<>()
+
             Pattern esl_pattern = Pattern.compile(/^source=[^"]+\s+coords=(\d+)\.\.(\d+)\s+length=\d+\s+frame=(\d+)\s+desc=.*$/)
 
             matches_files.each { matchFile ->
@@ -34,43 +36,51 @@ process WRITE_GFF3 {
                 if (nucleic) {
                     nucleicToProteinMd5 = db.groupProteins(proteins)
                     nucleicToProteinMd5.each { String nucleicMd5, Set<String> proteinMd5s ->
+                        if (seenNucleicMd5s.contains(nucleicMd5)) {
+                            return
+                        }
+                        seenNucleicMd5s.add(nucleicMd5)
+
                         seqData = db.nucleicMd5ToNucleicSeq(nucleicMd5)
-                        String seqId = seqData[0].id
-                        String sequence = seqData[0].sequence.trim()
-                        int seqLength = sequence.length()
-                        gff3Writer.writeLine("##sequence-region ${seqId} 1 ${seqLength}")
 
-                        proteinMd5s.each { String proteinMd5 ->
-                            // a proteinSeq/Md5 may be associated with multiple nt md5s/seq, only pull the data where the nt md5/seq is relevant
-                            proteinSeqData = db.getOrfSeq(proteinMd5, nucleicMd5)
-                            proteinSeqData.each { row ->
-                                def matcher = esl_pattern.matcher(row.description)
-                                assert matcher.matches()
-                                int start = matcher.group(1) as int
-                                int end = matcher.group(2) as int
-                                String strand = (matcher.group(3) as int) < 4 ? "+" : "-"
-                                String parentId = "${seqId}_${row.id}"
+                        seqData.each { seq ->
+                            String seqId = seq.id
+                            String sequence = seq.sequence.trim()
+                            int seqLength = sequence.length()
+                            gff3Writer.writeLine("##sequence-region ${seqId} 1 ${seqLength}")
 
-                                String line
-                                if (strand == "+") {
-                                    line = "${seqId}\tesl-translate\tCDS\t${start}\t${end}\t.\t${strand}\t0\tID=${parentId}"
-                                } else {
-                                    line = "${seqId}\tesl-translate\tCDS\t${end}\t${start}\t.\t${strand}\t0\tID=${parentId}"
-                                }
+                            proteinMd5s.each { String proteinMd5 ->
+                                // a proteinSeq/Md5 may be associated with multiple nt md5s/seq, only pull the data where the nt md5/seq is relevant
+                                proteinSeqData = db.getOrfSeq(proteinMd5, nucleicMd5)
+                                proteinSeqData.each { row ->
+                                    def matcher = esl_pattern.matcher(row.description)
+                                    assert matcher.matches()
+                                    int start = matcher.group(1) as int
+                                    int end = matcher.group(2) as int
+                                    String strand = (matcher.group(3) as int) < 4 ? "+" : "-"
+                                    String parentId = "${seqId}_${row.id}"
 
-                                gff3Writer.writeLine(line)
+                                    String line
+                                    if (strand == "+") {
+                                        line = "${seqId}\tesl-translate\tCDS\t${start}\t${end}\t.\t${strand}\t0\tID=${parentId}"
+                                    } else {
+                                        line = "${seqId}\tesl-translate\tCDS\t${end}\t${start}\t.\t${strand}\t0\tID=${parentId}"
+                                    }
 
-                                proteins[proteinMd5].each { modelAcc, match->
-                                    match = Match.fromMap(match)
-                                    match.locations.each { Location loc ->
-                                        gff3Writer.writeLine(proteinFormatLine(seqId, match, loc, parentId, strand == "+" ? start : end, strand))
+                                    gff3Writer.writeLine(line)
+
+                                    proteins[proteinMd5].each { modelAcc, match->
+                                        match = Match.fromMap(match)
+                                        match.locations.each { Location loc ->
+                                            gff3Writer.writeLine(proteinFormatLine(seqId, match, loc, parentId, strand == "+" ? start : end, strand))
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        fastaWriter.writeLine(">${seqId}")
-                        fastaWriter.writeLine("${sequence.replaceAll(/(.{60})/, '$1\n')}")  
+                            fastaWriter.writeLine(">${seqId}")
+                            fastaWriter.writeLine("${sequence.replaceAll(/(.{60})/, '$1\n')}")  
+                        }
                     }
                 } else {
                     proteins.each { String proteinMd5, Map matchesMap ->
