@@ -19,10 +19,54 @@ process WRITE_TSV {
 
     // Each line contains: seqId md5 seqLength memberDb modelAcc sigDesc start end evalue status date entryAcc entryDesc goterms pathways
     def currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+    Set<String> seenNucleicMd5s = new HashSet<>()
 
     matchesFiles.each { matchFile ->
-        matchFile = new File(matchFile.toString())
-        Map proteins = new ObjectMapper().readValue(matchFile, Map)
+        Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
+        if (nucleic) {
+            nucleicToProteinMd5 = db.groupProteins(proteins)
+            nucleicToProteinMd5.each { String nucleicMd5, Set<String> proteinMd5s ->
+                if (!seenNucleicMd5s.contains(nucleicMd5)) {
+                    seenNucleicMd5s.add(nucleicMd5)
+
+                    seqData = db.nucleicMd5ToNucleicSeq(nucleicMd5)
+
+
+                    // TODO
+                    seqData.each { row ->
+                        String seqId = row.id
+                        int seqLength = row.sequence.trim().length()
+                        match.locations.each { Location loc ->
+                            def line = formatLine(seqId, proteinMd5, seqLength, match, loc, memberDb, sigDesc, currentDate, entryAcc, entryDesc, goterms, pathways)
+                            tsvFile.append("${line}\n")
+                        }
+                    }
+                }
+            }
+        } else {
+            proteins.each { String proteinMd5, Map proteinMatches ->
+                proteinMatches.each { modelAcc, match ->
+                    match = Match.fromMap(match)
+                    String memberDb = match.signature.signatureLibraryRelease.library
+                    String sigDesc = match.signature.description ?: '-'
+                    def goterms = match.signature.entry?.goXRefs
+                    def pathways = match.signature.entry?.pathwayXRefs
+                    String entryAcc = match.signature.entry?.accession ?: '-'
+                    String entryDesc = match.signature.entry?.description ?: '-'
+
+                    seqData = db.proteinMd5ToProteinSeq(proteinMd5)
+
+                    seqData.each { row ->
+                        String seqId = row.id
+                        int seqLength = row.sequence.trim().length()
+                        match.locations.each { Location loc ->
+                            def line = formatLine(seqId, proteinMd5, seqLength, match, loc, memberDb, sigDesc, currentDate, entryAcc, entryDesc, goterms, pathways)
+                            tsvFile.append("${line}\n")
+                        }
+                    }
+                }
+            }
+        }
         proteins.each { String proteinMd5, Map matchesMap ->
             matchesMap.each { modelAcc, match ->
                 match = Match.fromMap(match)
@@ -32,6 +76,9 @@ process WRITE_TSV {
                 def pathways = match.signature.entry?.pathwayXRefs
                 String entryAcc = match.signature.entry?.accession ?: '-'
                 String entryDesc = match.signature.entry?.description ?: '-'
+
+
+
                 seqData = nucleic ? db.proteinMd5ToNucleicSeq(proteinMd5) : db.proteinMd5ToProteinSeq(proteinMd5)
                 seqData.each { row ->  // Protein or Nucleic: [id, desc, sequence]
                     String seqId = nucleic ? "${row.nid}_${row.pid}" : row.id
