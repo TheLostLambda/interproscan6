@@ -14,7 +14,7 @@ def main():
     parser.add_argument("--expected", type=str, default="tests/data/output/test.faa.json", help="JSON with expected results")
     parser.add_argument("--observed", type=str, default="tests/data/output/test.faa.json", help="JSON output file from IPS6")
     parser.add_argument("--summary", action="store_true", help="Print only the summary message")
-    parser.add_argument("--format", choices=["gff3", "json", "tsv", "xml", "intermediate"], default="json", help=(
+    parser.add_argument("--format", choices=["gff3", "json", "jsonl", "tsv", "xml", "intermediate"], default="json", help=(
         "Format of input files.\n"
         "'gff3', 'json' [default], 'tsv', or 'xml' for final output files\n"
         "or 'intermediate' to compare the temporary working files of InterProScan6."
@@ -28,6 +28,9 @@ def main():
     elif args.format == "json":
         expected = parse_json(args.expected)
         observed = parse_json(args.observed)
+    elif args.format == "jsonl":
+        expected = parse_jsonl(args.expected)
+        observed = parse_jsonl(args.observed)
     elif args.format == "tsv":
         expected = parse_tsv(args.expected)
         observed = parse_tsv(args.observed)
@@ -65,6 +68,22 @@ def main():
         f"Matches only in observed : {observed_only}\n"
         f"Matches in both          : {both}"
     )
+
+
+def parse_jsonl(iprscan_path: str):
+    """Convert all matches into lists, keeping only the data we care about"""
+    matches = []  # [[md5, sig_acc, loc start, loc end]]
+    with open(iprscan_path, "r") as fh:
+        for line in map(str.rstrip, fh):
+            iprsn_dict = json.loads(line)
+
+            for protein_dict in iprsn_dict["results"]:
+                md5 = protein_dict["md5"].upper()
+                for match in protein_dict["matches"]:
+                    sig_acc = match["signature"]["accession"]
+                    for loc in match["locations"]:
+                        matches.append([md5, sig_acc, loc["start"], loc["end"]])
+    return [repr(nested) for nested in matches]
 
 
 def parse_json(iprscan_path: str):

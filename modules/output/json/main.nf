@@ -1,8 +1,10 @@
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.io.SerializedString
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.core.util.DefaultIndenter
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import groovy.json.JsonException
 import java.util.regex.Pattern
 
@@ -19,30 +21,72 @@ process WRITE_JSON {
     val nucleic
     val interproscan_version
     val db_releases
+    val jsonlines
 
     exec:
     ObjectMapper jacksonMapper = new ObjectMapper()
     SeqDB db = new SeqDB(seq_db_file.toString())
-    streamJson(output_file.toString(), jacksonMapper) { JsonGenerator jsonWriter ->
-        jsonWriter.writeStringField("interproscan-version", interproscan_version)
-        jsonWriter.writeStringField("interpro-version", db_releases?.interpro?.version)
-        jsonWriter.writeFieldName("results")
-        jsonWriter.writeStartArray()  // start of results [...
-        matches_files.each { matchFile ->
-            if (nucleic) {  // input was nucleic acid sequence
+
+    streamJson(output_file.toString(), jacksonMapper, jsonlines) { JsonGenerator generator ->
+        if (jsonlines) {
+            generator.setRootValueSeparator(new SerializedString(''))
+            matches_files.each { matchFile ->
                 Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
-                nucleicToProteinMd5 = db.groupProteins(proteins)
-                nucleicToProteinMd5.each { String nucleicMd5, Set<String> proteinMd5s ->
-                    writeNucleic(nucleicMd5, proteinMd5s, proteins, jsonWriter, db)
-                }
-            } else {  // input was protein sequences
-                Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
-                proteins.each { String proteinMd5, Map proteinMatches ->
-                    writeProtein(proteinMd5, proteinMatches, jsonWriter, db)
+
+                if (nucleic) {
+                    nucleicToProteinMd5 = db.groupProteins(proteins)
+                    nucleicToProteinMd5.each { String nucleicMd5, Set<String> proteinMd5s ->
+                        generator.writeStartObject()
+                        generator.writeStringField("interproscan-version", interproscan_version)
+                        generator.writeStringField("interpro-version", db_releases?.interpro?.version)
+                        generator.writeFieldName("results")
+                        generator.writeStartArray()
+                        writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                        generator.writeEndArray()
+                        generator.writeEndObject()
+                        generator.writeRaw('\n')
+                    }
+                } else {
+                    proteins.each { String proteinMd5, Map proteinMatches ->
+                        generator.writeStartObject()
+                        generator.writeStringField("interproscan-version", interproscan_version)
+                        generator.writeStringField("interpro-version", db_releases?.interpro?.version)
+                        generator.writeFieldName("results")
+                        generator.writeStartArray()
+                        writeProtein(proteinMd5, proteinMatches, generator, db)
+                        generator.writeEndArray()
+                        generator.writeEndObject()
+                        generator.writeRaw('\n')
+                    }
                 }
             }
+        } else {
+            DefaultPrettyPrinter pp = new DefaultPrettyPrinter()
+            pp.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE)
+            generator.setPrettyPrinter(pp)
+            generator.writeStartObject()
+
+            generator.writeStringField("interproscan-version", interproscan_version)
+            generator.writeStringField("interpro-version", db_releases?.interpro?.version)
+            generator.writeFieldName("results")
+            generator.writeStartArray()  // start of results [...
+            matches_files.each { matchFile ->
+                if (nucleic) {  // input was nucleic acid sequence
+                    Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
+                    nucleicToProteinMd5 = db.groupProteins(proteins)
+                    nucleicToProteinMd5.each { String nucleicMd5, Set<String> proteinMd5s ->
+                        writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                    }
+                } else {  // input was protein sequences
+                    Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
+                    proteins.each { String proteinMd5, Map proteinMatches ->
+                        writeProtein(proteinMd5, proteinMatches, generator, db)
+                    }
+                }
+            }
+            generator.writeEndArray() // end of "results" ...]
+            generator.writeEndObject()
         }
-        jsonWriter.writeEndArray() // end of "results" ...]
     }
 }
 
@@ -557,30 +601,14 @@ def writeXref(seqData, JsonGenerator jsonWriter) {
     jsonWriter.writeEndArray()
 }
 
-def streamJson(String filePath, ObjectMapper mapper, Closure closure) {
-    /* Write out json objects while streaming the file.
-    ObjectMapper jacksonMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-    JsonWriter.streamMap(outputFilePath.toString(), jacksonMapper) { JsonGenerator jsonGenerator ->
-        jsonGenerator.writeStringField("exampleKey", "exampleValue")
-    }
-    */
+def streamJson(String filePath, ObjectMapper mapper, boolean jsonlines, Closure closure) {
     FileWriter fileWriter = null
     JsonGenerator generator = null
     try {
         JsonFactory factory = mapper.getFactory()
-
         fileWriter = new FileWriter(new File(filePath))
         generator = factory.createGenerator(fileWriter)
-
-        DefaultPrettyPrinter pp = new DefaultPrettyPrinter()
-        pp.indentArraysWith(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE)
-        generator.setPrettyPrinter(pp)
-
-        generator.writeStartObject()
-
         closure.call(generator)  // Call the closure to write key-value pairs
-
-        generator.writeEndObject()
     } catch (IOException e) {
         throw new JsonException("IO error writing file: $filePath\nException: $e\nCause: ${e.getCause()}", e)
     } catch (Exception e) {
@@ -593,4 +621,4 @@ def streamJson(String filePath, ObjectMapper mapper, Closure closure) {
             fileWriter.close()
         }
     }
-}   
+}
