@@ -205,6 +205,7 @@ class SeqDB {
         int fileIndex = 1
         def batch = []
         def currentMD5 = null
+        def seenProteinMd5s = [] as Set
         def writer = null
 
         this.sql.eachRow(query) { row ->
@@ -222,13 +223,18 @@ class SeqDB {
                 writer.close()
                 fileIndex++
                 batch.clear()
+                seenProteinMd5s.clear()
             }
-            // Don't add the GroovyResultSet item, else when writing the final batch we will get a ResultSet closed error
-            batch.add([
-                nt_md5  : row.nt_md5,
-                md5     : row.md5,
-                sequence: row.sequence
-            ])
+
+            if (!seenProteinMd5s.contains(row.md5)) {
+                seenProteinMd5s.add(row.md5)
+                // Don't add the GroovyResultSet item, else when writing the final batch we will get a ResultSet closed error
+                batch.add([
+                    md5     : row.md5,
+                    sequence: row.sequence
+                ])
+            }
+
             currentMD5 = nucleic ? row.nt_md5 : row.md5
         }
 
