@@ -28,17 +28,26 @@ process WRITE_TSV {
             nucleicToProteinMd5.each { String nucleicMd5, Set<String> proteinMd5s ->
                 if (!seenNucleicMd5s.contains(nucleicMd5)) {
                     seenNucleicMd5s.add(nucleicMd5)
-
                     seqData = db.nucleicMd5ToNucleicSeq(nucleicMd5)
-
-
-                    // TODO
-                    seqData.each { row ->
-                        String seqId = row.id
-                        int seqLength = row.sequence.trim().length()
-                        match.locations.each { Location loc ->
-                            def line = formatLine(seqId, proteinMd5, seqLength, match, loc, memberDb, sigDesc, currentDate, entryAcc, entryDesc, goterms, pathways)
-                            tsvFile.append("${line}\n")
+                    proteinMd5s.each { String proteinMd5 ->
+                        def proteinMatches = proteins[proteinMd5]
+                        if (proteinMatches == null) return
+                        proteinMatches.each { modelAcc, matchMap ->
+                            def match = Match.fromMap(matchMap)
+                            String memberDb = match.signature.signatureLibraryRelease.library
+                            String sigDesc = match.signature.description ?: '-'
+                            def goterms = match.signature.entry?.goXRefs
+                            def pathways = match.signature.entry?.pathwayXRefs
+                            String entryAcc = match.signature.entry?.accession ?: '-'
+                            String entryDesc = match.signature.entry?.description ?: '-'
+                            seqData.each { row ->
+                                String seqId = row.id
+                                int seqLength = row.sequence.trim().length()
+                                match.locations.each { Location loc ->
+                                    def line = formatLine(seqId, proteinMd5, seqLength, match, loc, memberDb, sigDesc, currentDate, entryAcc, entryDesc, goterms, pathways)
+                                    tsvFile.append("${line}\n")
+                                }
+                            }
                         }
                     }
                 }
@@ -53,9 +62,7 @@ process WRITE_TSV {
                     def pathways = match.signature.entry?.pathwayXRefs
                     String entryAcc = match.signature.entry?.accession ?: '-'
                     String entryDesc = match.signature.entry?.description ?: '-'
-
                     seqData = db.proteinMd5ToProteinSeq(proteinMd5)
-
                     seqData.each { row ->
                         String seqId = row.id
                         int seqLength = row.sequence.trim().length()
@@ -67,30 +74,7 @@ process WRITE_TSV {
                 }
             }
         }
-        proteins.each { String proteinMd5, Map matchesMap ->
-            matchesMap.each { modelAcc, match ->
-                match = Match.fromMap(match)
-                String memberDb = match.signature.signatureLibraryRelease.library
-                String sigDesc = match.signature.description ?: '-'
-                def goterms = match.signature.entry?.goXRefs
-                def pathways = match.signature.entry?.pathwayXRefs
-                String entryAcc = match.signature.entry?.accession ?: '-'
-                String entryDesc = match.signature.entry?.description ?: '-'
-
-
-
-                seqData = nucleic ? db.proteinMd5ToNucleicSeq(proteinMd5) : db.proteinMd5ToProteinSeq(proteinMd5)
-                seqData.each { row ->  // Protein or Nucleic: [id, desc, sequence]
-                    String seqId = nucleic ? "${row.nid}_${row.pid}" : row.id
-                    int seqLength = row.sequence.trim().length()
-                    match.locations.each { Location loc ->
-                        def line = formatLine(seqId, proteinMd5, seqLength, match, loc, memberDb, sigDesc, currentDate, entryAcc, entryDesc, goterms, pathways)
-                        tsvFile.append("${line}\n")
-                    }
-                }
-            } // end of matches in matchesNode
-        } // end of proteins.each
-    } // end of matchesFiles
+    }
 }
 
 def formatLine(seqId, 
