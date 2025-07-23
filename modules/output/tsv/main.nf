@@ -28,7 +28,8 @@ process WRITE_TSV {
             nucleicToProteinMd5.each { String nucleicMd5, Set<String> proteinMd5s ->
                 if (!seenNucleicMd5s.contains(nucleicMd5)) {
                     seenNucleicMd5s.add(nucleicMd5)
-                    seqData = db.nucleicMd5ToNucleicSeq(nucleicMd5)
+                    def ntSeqData = db.nucleicMd5ToNucleicSeq(nucleicMd5)
+                    String parentId = ntSeqData[0].id
                     proteinMd5s.each { String proteinMd5 ->
                         def proteinMatches = proteins[proteinMd5]
                         if (proteinMatches == null) return
@@ -40,8 +41,9 @@ process WRITE_TSV {
                             def pathways = match.signature.entry?.pathwayXRefs
                             String entryAcc = match.signature.entry?.accession ?: '-'
                             String entryDesc = match.signature.entry?.description ?: '-'
-                            seqData.each { row ->
-                                String seqId = row.id
+                            def proteinSeqData = db.getOrfSeq(proteinMd5, nucleicMd5)
+                            proteinSeqData.each { row ->
+                                String seqId = "${parentId}_${row.id}"
                                 int seqLength = row.sequence.trim().length()
                                 match.locations.each { Location loc ->
                                     def line = formatLine(seqId, proteinMd5, seqLength, match, loc, memberDb, sigDesc, currentDate, entryAcc, entryDesc, goterms, pathways)
