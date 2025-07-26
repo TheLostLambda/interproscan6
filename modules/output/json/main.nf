@@ -311,9 +311,9 @@ def writeCDD(Map match, JsonGenerator jsonWriter) {
                 "location-fragments": formatFragments(loc.fragments),
                 "sites"             : loc.sites.collect { site ->
                     [
-                            "description"  : site.description,
-                            "numLocations" : site.numLocations,
-                            "siteLocations": site.siteLocations
+                        "description"  : site.description,
+                        "numLocations" : site.numLocations,
+                        "siteLocations": site.siteLocations
                     ]
                 }
             ]
