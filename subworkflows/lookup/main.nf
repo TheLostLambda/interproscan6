@@ -23,13 +23,13 @@ workflow LOOKUP {
         interproscan_version,
         workflow_manifest
     )
-    matches_api_url = PREPARE_LOOKUP.out[0]
+    matches_api_apps = PREPARE_LOOKUP.out[0]
 
-    matches_api_url
+    matches_api_apps
         .filter { it }
         .combine(ch_seqs)
-        .map { url, index, fasta ->
-            tuple(index, fasta, apps, url, chunk_size, max_retries)
+        .map { api_apps, index, fasta ->
+            tuple(index, fasta, matches_api_url, apps, api_apps, chunk_size, max_retries)
         }
         .set { lookup_input }
 
@@ -39,7 +39,7 @@ workflow LOOKUP {
     noMatchesFasta = LOOKUP_MATCHES.out[1]
 
     // fallback when no API URL is available
-    matches_api_url
+    matches_api_apps
         .filter { !it }
         .map { _ ->
             precalculatedMatches = Channel.empty()

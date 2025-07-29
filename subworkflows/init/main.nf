@@ -79,17 +79,6 @@ workflow INIT_PIPELINE {
         outprefix = "${outdir}/${outprefix}"
     }
 
-    if (!no_matches_api) {
-        invalidApps = apps.findAll { app ->
-            ["signalp_euk", "signalp_prok", "deeptmhmm"].contains(app)
-        }
-
-        if (invalidApps) {
-            log.error "Precomputed results for DeepTMHMM, SignalP_Euk, and SignalP_Prok are not yet available in the Matches API. To ensure these analyses run locally and produce results, please add the '--no-matches-api' flag when invoking the pipeline."
-            exit 1
-        }
-    }
-
     emit:
     fasta            // str: path to input fasta file
     apps             // list: list of application to

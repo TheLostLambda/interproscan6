@@ -13,17 +13,18 @@ process PREPARE_LOOKUP {
     val workflow_manifest
 
     output:
-    val matchesApiUrl
+    val matchesApiApps
 
     exec:
+    def _matchesApiApps   = []    // apps in the matches api
     String _matchesApiUrl = _url  // reassign to avoid 'variable' already used error when logging
     // Get MLS metadata: api (version), release, release_date
-    Map info = HTTPRequest.fetch("${HTTPRequest.sanitizeURL(_matchesApiUrl)}/info".toString(), null, 0, true)
-    if (info == null) {
+    def _info = HTTPRequest.fetch("${HTTPRequest.sanitizeURL(_matchesApiUrl)}/info".toString(), null, 0, true)
+    if (_info == null) {
         log.warn "An error occurred while querying the Matches API; analyses will be run locally"
         matchesApiUrl = null
     } else {
-        def apiVersion = info.api ?: "X.Y.Z"
+        def apiVersion = _info.api ?: "X.Y.Z"
         def majorVersion = apiVersion.split("\\.")[0]
         if (majorVersion != "0") {
             log.warn "${workflow_manifest.name} ${workflow_manifest.version}" +
@@ -31,15 +32,20 @@ process PREPARE_LOOKUP {
                     " analyses will be run locally"
             matchesApiUrl = null
         } else if (db_releases) {  // can be null if we don't need data for the selected apps (e.g. mobidblite)
-            if (db_releases["interpro"]["version"] != info.release) {
-                log.warn "The local InterPro version does not match the match API release (Local: ${db_releases['interpro']}, Matches API: ${info.release}).\n" +
+            if (db_releases["interpro"]["version"] != _info.release) {
+                log.warn "The local InterPro version does not match the match API release (Local: ${db_releases['interpro']}, Matches API: ${_info.release}).\n" +
                         "Pre-calculated matches will not be retrieved, and analyses will be run locally"
                 matchesApiUrl = null
+            } else {
+                for (analyse in _info.analyses) {
+                    name = analyse.name.toString().toLowerCase().replace(' ', '').replace('-', '')
+                    _matchesApiApps << name
+                }
             }
         }
     }
-    matchesApiUrl = _matchesApiUrl
-    return matchesApiUrl
+    matchesApiApps = _matchesApiApps ? _matchesApiApps.join(",") : null
+    return matchesApiApps
 }
 
 process LOOKUP_MATCHES {
@@ -48,7 +54,7 @@ process LOOKUP_MATCHES {
     executor 'local'
 
     input:
-    tuple val(index), val(fasta), val(applications), val(url), val(chunkSize), val(maxRetries)
+    tuple val(index), val(fasta), val(url), val(applications), val(api_apps), val(chunkSize), val(maxRetries)
 
     output:
     tuple val(index), path("calculatedMatches.json")
