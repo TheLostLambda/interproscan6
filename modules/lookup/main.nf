@@ -44,7 +44,7 @@ process PREPARE_LOOKUP {
             }
         }
     }
-    matchesApiApps = _matchesApiApps ? _matchesApiApps.join(",") : null
+    matchesApiApps = _matchesApiApps ? _matchesApiApps.join(",") : "" // use str for NF serialisation
     return matchesApiApps
 }
 
@@ -72,8 +72,9 @@ process LOOKUP_MATCHES {
 
     // Check for apps who are not listed in the matches API
     // We will need a FASTA file with all sequences if some apps are not in the API
-    List<String> _api_apps = api_apps.toString().split(",")
-    List<String> _missing_apps = applications.findAll { !(_api_apps.contains(it)) }
+    List<String> allApps = applications.clone() as List<String>
+    List<String> _all_api_apps = api_apps.toString().split(",")
+    List<String> _missing_apps = allApps.findAll { !(_all_api_apps.contains(it)) }
     if (_missing_apps) {
         log.warn "The following applications are not available in the Matches API: ${_missing_apps.join(", ")}.\n" +
                  "Pre-calculated matches will not be retrieved for these applications, and analyses will be run locally."
@@ -132,8 +133,6 @@ process LOOKUP_MATCHES {
         new File(calculatedMatchesPath.toString()).write(JsonOutput.toJson([:]))
         if (noMatchesFasta.length() != 0) { new File(noMatchesFastaPath.toString()).write(noMatchesFasta.toString()) }
     }
-
-
 }   
 
 def Map transformMatch(Map match, String seq) {

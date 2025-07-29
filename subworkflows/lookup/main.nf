@@ -53,5 +53,4 @@ workflow LOOKUP {
     precalculatedMatches
     noMatchesFasta
     noLookupFasta
-    matchesApiApps
 }

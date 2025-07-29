@@ -20,7 +20,7 @@ include { SMART             } from "../smart"
 include { SUPERFAMILY       } from "../superfamily"
 include { REPORT_NO_MATCHES } from "../../modules/no_matches"
 
-workflow SCAN_SEQUENCES {
+workflow SCAN {
     take:
     ch_seqs             // channel of tuples (index, fasta file)
     db_releases         // map: [db: version, dirpath]
