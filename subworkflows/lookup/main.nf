@@ -15,7 +15,8 @@ workflow LOOKUP {
     main:
     // Initialise channels for outputs
     precalculatedMatches = Channel.empty()
-    noMatchesFasta = Channel.empty()
+    noMatchesFasta       = Channel.empty()
+    noLookupFasta        = Channel.empty()
 
     PREPARE_LOOKUP(
         matches_api_url,
@@ -23,9 +24,9 @@ workflow LOOKUP {
         interproscan_version,
         workflow_manifest
     )
-    matches_api_apps = PREPARE_LOOKUP.out[0]
+    matchesApiApps = PREPARE_LOOKUP.out[0]
 
-    matches_api_apps
+    matchesApiApps
         .filter { it }
         .combine(ch_seqs)
         .map { api_apps, index, fasta ->
@@ -36,17 +37,21 @@ workflow LOOKUP {
     LOOKUP_MATCHES(lookup_input)
 
     precalculatedMatches = LOOKUP_MATCHES.out[0]
-    noMatchesFasta = LOOKUP_MATCHES.out[1]
+    noMatchesFasta       = LOOKUP_MATCHES.out[1]
+    noLookupFasta        = LOOKUP_MATCHES.out[2]
 
     // fallback when no API URL is available
-    matches_api_apps
+    matchesApiApps
         .filter { !it }
         .map { _ ->
             precalculatedMatches = Channel.empty()
-            noMatchesFasta = ch_seqs
+            noMatchesFasta       = ch_seqs
+            noLookupFasta        = Channel.empty()
         }
 
     emit:
     precalculatedMatches
     noMatchesFasta
+    noLookupFasta
+    matchesApiApps
 }

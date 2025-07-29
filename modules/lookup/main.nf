@@ -58,14 +58,29 @@ process LOOKUP_MATCHES {
 
     output:
     tuple val(index), path("calculatedMatches.json")
+    tuple val(index), path("noMatches.fasta"), optional: true
     tuple val(index), path("noLookup.fasta"), optional: true
 
     exec:
     def calculatedMatchesPath = task.workDir.resolve("calculatedMatches.json")
     def calculatedMatches = [:]
 
+    def noMatchesFastaPath = task.workDir.resolve("noMatches.fasta")
+    def noMatchesFasta = new StringBuilder()
+
     def noLookupFastaPath = task.workDir.resolve("noLookup.fasta")
-    def noLookupFasta = new StringBuilder()
+
+    // Check for apps who are not listed in the matches API
+    // We will need a FASTA file with all sequences if some apps are not in the API
+    List<String> _api_apps = api_apps.toString().split(",")
+    List<String> _missing_apps = applications.findAll { !(_api_apps.contains(it)) }
+    if (_missing_apps) {
+        log.warn "The following applications are not available in the Matches API: ${_missing_apps.join(", ")}.\n" +
+                 "Pre-calculated matches will not be retrieved for these applications, and analyses will be run locally."
+        def sourceFasta = new File(fasta.toString())
+        def noLookupFasta = new File(noLookupFastaPath.toString())
+        noLookupFasta.text = sourceFasta.text
+    }
 
     Map<String, String> sequences = FastaFile.parse(fasta.toString())  // [md5: sequence]
     def md5List = sequences.keySet().toList().sort()
@@ -97,8 +112,8 @@ process LOOKUP_MATCHES {
                     }
                 } else {
                     def seq = sequences[proteinMd5]
-                    noLookupFasta.append(">${proteinMd5}\n")
-                    noLookupFasta.append("${seq}\n")
+                    noMatchesFasta.append(">${proteinMd5}\n")
+                    noMatchesFasta.append("${seq}\n")
                 }
             }
         } else {
@@ -110,14 +125,16 @@ process LOOKUP_MATCHES {
     if (success) {
         def jsonMatches = JsonOutput.toJson(calculatedMatches)
         new File(calculatedMatchesPath.toString()).write(JsonOutput.toJson(calculatedMatches))
-        if (noLookupFasta.length() != 0) { new File(noLookupFastaPath.toString()).write(noLookupFasta.toString()) }
+        if (noMatchesFasta.length() != 0) { new File(noMatchesFastaPath.toString()).write(noMatchesFasta.toString()) }
     } else {
         log.warn "An error occurred while querying the Matches API, analyses will be run locally"
-        // when the connection fails, write out all sequences to "noLookup.fasta"
+        // when the connection fails, write out all sequences to "noMatches.fasta"
         new File(calculatedMatchesPath.toString()).write(JsonOutput.toJson([:]))
-        if (noLookupFasta.length() != 0) { new File(noLookupFastaPath.toString()).write(noLookupFasta.toString()) }
+        if (noMatchesFasta.length() != 0) { new File(noMatchesFastaPath.toString()).write(noMatchesFasta.toString()) }
     }
-}
+
+
+}   
 
 def Map transformMatch(Map match, String seq) {
     // * operator - spread contents of a map or collecion into another map or collection
