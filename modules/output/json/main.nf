@@ -601,7 +601,7 @@ def writeXref(seqData, JsonGenerator jsonWriter) {
     seqData.each { row ->
         // jsonWrite.writeObject([name: "$seqId $seqDesc"]) does not correctly handle the formatted str
         jsonWriter.writeStartObject()
-        jsonWriter.writeStringField("name", "${row.id} ${row.description}")
+        jsonWriter.writeStringField("name", "${row.id} ${row.description}".trim())
         jsonWriter.writeStringField("id", row.id)
         jsonWriter.writeEndObject()
     }

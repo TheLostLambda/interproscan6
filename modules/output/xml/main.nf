@@ -557,6 +557,6 @@ def addSiteNodes(locationSites, memberDB, xml) {
 def writeXref(seqData, xml) {
     // <xref id="id" name="id desc"/>
     seqData.each { row ->
-        xml.xref(id: row.id, name: "${row.id} ${row.description}")
+        xml.xref(id: row.id, name: "${row.id} ${row.description}".trim())
     }
 }
