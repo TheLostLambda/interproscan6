@@ -22,7 +22,8 @@ workflow LOOKUP {
         matches_api_url,
         db_releases,
         interproscan_version,
-        workflow_manifest
+        workflow_manifest,
+        apps
     )
     matchesApiApps = PREPARE_LOOKUP.out[0]
 
