@@ -30,6 +30,7 @@ process WRITE_JSON {
     streamJson(output_file.toString(), jacksonMapper, jsonlines) { JsonGenerator generator ->
         if (jsonlines) {
             generator.setRootValueSeparator(new SerializedString(''))
+            Set<String> seenNucleicMd5s = new HashSet<>()
             matches_files.each { matchFile ->
                 Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
 
@@ -41,7 +42,10 @@ process WRITE_JSON {
                         generator.writeStringField("interpro-version", db_releases?.interpro?.version)
                         generator.writeFieldName("results")
                         generator.writeStartArray()
-                        writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                        if (!seenNucleicMd5s.contains(nucleicMd5)) {
+                            writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                            seenNucleicMd5s.add(nucleicMd5)
+                        }
                         generator.writeEndArray()
                         generator.writeEndObject()
                         generator.writeRaw('\n')
@@ -70,15 +74,18 @@ process WRITE_JSON {
             generator.writeStringField("interpro-version", db_releases?.interpro?.version)
             generator.writeFieldName("results")
             generator.writeStartArray()  // start of results [...
+            Set<String> seenNucleicMd5s = new HashSet<>()
             matches_files.each { matchFile ->
+                Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
                 if (nucleic) {  // input was nucleic acid sequence
-                    Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
                     nucleicToProteinMd5 = db.groupProteins(proteins)
                     nucleicToProteinMd5.each { String nucleicMd5, Set<String> proteinMd5s ->
-                        writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                        if (!seenNucleicMd5s.contains(nucleicMd5)) {
+                            writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                            seenNucleicMd5s.add(nucleicMd5)
+                        }
                     }
                 } else {  // input was protein sequences
-                    Map proteins = new ObjectMapper().readValue(new File(matchFile.toString()), Map)
                     proteins.each { String proteinMd5, Map proteinMatches ->
                         writeProtein(proteinMd5, proteinMatches, generator, db)
                     }
@@ -103,7 +110,7 @@ def writeNucleic(String nucleicMd5, Set<String> proteinMd5s, Map proteinMatches,
     String sequence = ntSeqData[0].sequence
     jsonWriter.writeStringField("sequence", sequence)
     jsonWriter.writeStringField("md5", nucleicMd5)
-    
+
     // 2. {..., "crossReferences": [{ntSeqXref}, {ntSeqXref}]}
     jsonWriter.writeFieldName("crossReferences")
     writeXref(ntSeqData, jsonWriter)
@@ -500,34 +507,34 @@ def writeSignalp(Map match, JsonGenerator jsonWriter) {
 }
 
 def writeSFLD(Map match, JsonGenerator jsonWriter) {
-     jsonWriter.writeObject([
-         "signature": match.signature,
-         "model-ac" : match.modelAccession,
-         "evalue"   : match.evalue,
-         "score"    : match.score,
-         "locations": match.locations.collect { loc ->
-             [
-                 "start"             : loc.start,
-                 "end"               : loc.end,
-                 "representative"    : loc.representative,
-                 "hmmStart"          : loc.hmmStart,
-                 "hmmEnd"            : loc.hmmEnd,
-                 "hmmLength"         : loc.hmmLength,
-                 "score"             : loc.score,
-                 "envelopeStart"     : loc.envelopeStart,
-                 "envelopeEnd"       : loc.envelopeEnd,
-                 "location-fragments": formatFragments(loc.fragments),
-                 "sites"             : loc.sites.collect { site ->
-                     [
-                         "description": site.description,
-                         "numLocations": site.numLocations,
-                         "siteLocations": site.siteLocations.collect { siteLoc ->
-                             [
-                                 "start"  : siteLoc.start,
-                                 "end"    : siteLoc.end,
-                                 "residue": siteLoc.residue
-                             ]
-                         },
+    jsonWriter.writeObject([
+        "signature": match.signature,
+        "model-ac" : match.modelAccession,
+        "evalue"   : match.evalue,
+        "score"    : match.score,
+        "locations": match.locations.collect { loc ->
+            [
+                "start"             : loc.start,
+                "end"               : loc.end,
+                "representative"    : loc.representative,
+                "hmmStart"          : loc.hmmStart,
+                "hmmEnd"            : loc.hmmEnd,
+                "hmmLength"         : loc.hmmLength,
+                "score"             : loc.score,
+                "envelopeStart"     : loc.envelopeStart,
+                "envelopeEnd"       : loc.envelopeEnd,
+                "location-fragments": formatFragments(loc.fragments),
+                "sites"             : loc.sites.collect { site ->
+                    [
+                        "description": site.description,
+                        "numLocations": site.numLocations,
+                        "siteLocations": site.siteLocations.collect { siteLoc ->
+                            [
+                                "start"  : siteLoc.start,
+                                "end"    : siteLoc.end,
+                                "residue": siteLoc.residue
+                            ]
+                        },
                     ]
                 } // end of "sites"
             ]
@@ -581,7 +588,7 @@ def formatFragments(fragments) {
             "start"    : frag.start,
             "end"      : frag.end,
             "dc-status": frag.dcStatus
-        ]   
+        ]
     }
 }
 
@@ -594,7 +601,7 @@ def writeXref(seqData, JsonGenerator jsonWriter) {
     seqData.each { row ->
         // jsonWrite.writeObject([name: "$seqId $seqDesc"]) does not correctly handle the formatted str
         jsonWriter.writeStartObject()
-        jsonWriter.writeStringField("name", "${row.id} ${row.description}")
+        jsonWriter.writeStringField("name", "${row.id} ${row.description}".trim())
         jsonWriter.writeStringField("id", row.id)
         jsonWriter.writeEndObject()
     }
