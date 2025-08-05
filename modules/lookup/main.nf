@@ -51,7 +51,7 @@ process PREPARE_LOOKUP {
         log.warn "The following applications are not available in the Matches API: ${_missing_apps.join(", ")}.\n" +
                  "Pre-calculated matches will not be retrieved for these applications, and analyses will be run locally."
     }
-    matchesApiApps = [_matchesApiApps]
+    matchesApiApps = _matchesApiApps ? [_matchesApiApps] : null
 }
 
 process LOOKUP_MATCHES {
@@ -78,7 +78,7 @@ process LOOKUP_MATCHES {
 
     // Check for apps who are not listed in the matches API
     // We will need a FASTA file with all sequences if some apps are not in the API
-    List<String> allApps       = applications.clone() as List<String>
+    List<String> allApps = applications.clone() as List<String>
     List<String> _all_api_apps = api_apps.clone() as List<String>
     List<String> _missing_apps = allApps.findAll { !(_all_api_apps.contains(it)) }
     if (_missing_apps) {
