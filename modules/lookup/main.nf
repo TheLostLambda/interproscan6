@@ -11,6 +11,7 @@ process PREPARE_LOOKUP {
     val db_releases
     val interproscan_version  // major.minor iprscan version number
     val workflow_manifest
+    val apps
 
     output:
     val matchesApiApps
@@ -44,8 +45,13 @@ process PREPARE_LOOKUP {
             }
         }
     }
-    matchesApiApps = _matchesApiApps ? _matchesApiApps.join(",") : "" // use str for NF serialisation
-    return matchesApiApps
+    List<String> allApps = apps.clone() as List<String>
+    List<String> _missing_apps = allApps.findAll { !(_matchesApiApps.contains(it)) }
+    if (_missing_apps) {
+        log.warn "The following applications are not available in the Matches API: ${_missing_apps.join(", ")}.\n" +
+                 "Pre-calculated matches will not be retrieved for these applications, and analyses will be run locally."
+    }
+    matchesApiApps = [_matchesApiApps]
 }
 
 process LOOKUP_MATCHES {
@@ -72,12 +78,10 @@ process LOOKUP_MATCHES {
 
     // Check for apps who are not listed in the matches API
     // We will need a FASTA file with all sequences if some apps are not in the API
-    List<String> allApps = applications.clone() as List<String>
-    List<String> _all_api_apps = api_apps.toString().split(",")
+    List<String> allApps       = applications.clone() as List<String>
+    List<String> _all_api_apps = api_apps.clone() as List<String>
     List<String> _missing_apps = allApps.findAll { !(_all_api_apps.contains(it)) }
     if (_missing_apps) {
-        log.warn "The following applications are not available in the Matches API: ${_missing_apps.join(", ")}.\n" +
-                 "Pre-calculated matches will not be retrieved for these applications, and analyses will be run locally."
         def sourceFasta = new File(fasta.toString())
         def noLookupFasta = new File(noLookupFastaPath.toString())
         noLookupFasta.text = sourceFasta.text
