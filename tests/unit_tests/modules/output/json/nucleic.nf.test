@@ -41,6 +41,7 @@ nextflow_process {
                 input[3] = true
                 input[4] = "105.0"
                 input[5] = params.db_releases
+                input[6] = false
                 """
             }
         }

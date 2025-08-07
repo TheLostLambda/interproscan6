@@ -12,8 +12,7 @@ nextflow_process {
             }
             process {
                 """
-                input[0] = [1, [file("$baseDir/tests/data/channels/antifam.json"), file("$baseDir/tests/data/channels/pfam.json")]]
-                input[1] = [1, file("$baseDir/tests/data/sequences/test.faa")]
+                input[0] = [1, file("$baseDir/tests/data/sequences/test.faa"), [file("$baseDir/tests/data/channels/antifam.json"), file("$baseDir/tests/data/channels/pfam.json")]]
                 """
             }
         }

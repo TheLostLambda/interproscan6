@@ -17,13 +17,11 @@ class InterProScan {
             name: "datadir",  // only required when using members with datafiles
             metavar: "<DATA-DIR>",
             description: "path to data directory.",
-            canBeNull: true
         ],
         [
             name: "applications",
             metavar: "<APPLICATIONS>",
             description: "comma-separated applications to scan the sequences with. Default: all.",
-            canBeNull: true
         ],
         [
             name: "formats",
@@ -49,7 +47,6 @@ class InterProScan {
             name: "matches-api-url",
             metavar: "<URL>",
             description: "override the default InterPro Matches API, hosted at EMBL-EBI. Use this option to specify the URL of an alternative Matches API instance.",
-            canBeNull: true
         ],
         [
             name: "no-matches-api",
@@ -66,6 +63,10 @@ class InterProScan {
         [
             name: "pathways",
             description: "include pathway mapping in output files."
+        ],
+        [
+            name: "globus",
+            description: "use the Globus mirror of the EMBL-EBI FTP site to download InterProScan data files.",
         ],
         [
             name: "help",
@@ -89,7 +90,6 @@ class InterProScan {
             name: "skip-applications",
             metavar: "<APPLICATIONS>",
             description: "comma-separated applications to exclude from analysis. Default: none.",
-            canBeNull: true
         ],
         [
             name: "skip-interpro",
@@ -110,7 +110,7 @@ class InterProScan {
         ],
     ]
 
-    static final def VALID_FORMATS = ["JSON", "TSV", "XML", "GFF3"]
+    static final def VALID_FORMATS = ["JSON", "JSONL", "TSV", "XML", "GFF3"]
 
     static final def LICENSED_SOFTWARE = ["phobius", "signalp_euk", "signalp_prok", "deeptmhmm"]
 
@@ -122,6 +122,7 @@ class InterProScan {
     ]
 
     static final String FTP_URL = "https://ftp.ebi.ac.uk/pub/software/unix/iprscan/6"
+    static final String GLOBUS_URL = "https://g-a8b222.dd271.03c0.data.globus.org/pub/software/unix/iprscan/6"
 
     static void validateParams(params, log) {
         def allowedParams = this.PARAMS.collect { it.name.toLowerCase() }
@@ -150,7 +151,7 @@ class InterProScan {
             if (allowedParams.contains(kebabParamName.toLowerCase())) {
                 def paramObj = this.PARAMS.find { it.name.toLowerCase() == kebabParamName.toLowerCase() }
                 assert paramObj != null
-                if (paramObj?.metavar != null && !paramObj?.canBeNull && (paramValue instanceof Boolean)) {
+                if (paramObj?.metavar != null && paramValue != null && (paramValue instanceof Boolean)) {
                     log.error "'--${paramObj.name} ${paramObj.metavar}' is mandatory and cannot be empty."
                     System.exit(1)
                 }
@@ -324,8 +325,9 @@ class InterProScan {
         return version
     }
 
-    static List<String> fetchCompatibleVersions(String majorMinorVersion) {
-        String url = "${InterProScan.FTP_URL}/${majorMinorVersion}/versions.json"
+    static List<String> fetchCompatibleVersions(String majorMinorVersion, boolean useGlobus = false) {
+        String baseUrl = useGlobus ? GLOBUS_URL : FTP_URL
+        String url = "${baseUrl}/${majorMinorVersion}/versions.json"
         Map versions = HTTPRequest.fetch(url, null, 2, false)
         return versions?.interpro?.collect { it?.toString() } ?: null
     }
