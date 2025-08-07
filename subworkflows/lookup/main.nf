@@ -26,12 +26,13 @@ workflow LOOKUP {
         apps
     )
     matchesApiApps = PREPARE_LOOKUP.out[0]
+    matchesApiApps.view{ "VIEW: matchesApiApps: ${it}" }
 
     matchesApiApps
         .filter { it }
         .combine(ch_seqs)
-        .map { api_apps, index, fasta ->
-            tuple(index, fasta, matches_api_url, apps, api_apps, chunk_size, max_retries)
+        .map { apiApps, userLocalApps, userApiApps, index, fasta ->
+            tuple(index, fasta, matches_api_url, apps, apiApps, chunk_size, max_retries)
         }
         .set { lookup_input }
 
