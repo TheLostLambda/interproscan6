@@ -59,7 +59,8 @@ workflow {
 
     PREPARE_SEQUENCES(
         fasta_file,
-        applications
+        params.nucleic,
+        params.batchSize
     )
     ch_seqs              = PREPARE_SEQUENCES.out.ch_seqs
     seq_db_path          = PREPARE_SEQUENCES.out.seq_db_path
