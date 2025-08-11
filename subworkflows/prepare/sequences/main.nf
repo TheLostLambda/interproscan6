@@ -6,11 +6,12 @@ include { ESL_TRANSLATE   } from "../../../modules/esl_translate"
 
 workflow PREPARE_SEQUENCES {
     take:
-    fasta_file   // path to the input FASTA file
-    apps         // list of applications to be run
+    ch_fasta     // channel of the input FASTA file
+    is_nucleic   // true if the sequences are nucleic, false if protein
+    batch_size   // size of the batches to split the sequences into
 
     main:
-    def (fasta, error) = VALIDATE_FASTA(fasta_file, params.nucleic)
+    (ch_fasta, error) = VALIDATE_FASTA(ch_fasta, is_nucleic)
     // Wait for process to complete so its output channels become available
     error.subscribe { seq_id -> 
         if (seq_id != null) {
@@ -19,27 +20,22 @@ workflow PREPARE_SEQUENCES {
         }
     }
 
-    if (params.nucleic) {
+    if (is_nucleic) {
         // Store the input seqs in the internal ips6 seq db
-        LOAD_SEQUENCES(fasta, params.nucleic)
+        LOAD_SEQUENCES(ch_fasta, is_nucleic)
 
-        // Chunk input file in smaller files for translation
-        Channel.fromPath(params.input)
-            .splitFasta( by: params.batchSize, file: true )
-            .set { ch_fasta }
-
-        /* Translate DNA/RNA sequences to protein sequences. Only proceed once completed
-        ensuring SPLIT_FASTA only runs once LOAD_ORFS is completed */
-        ch_translated = ESL_TRANSLATE(ch_fasta).collect()
+        // Translate DNA/RNA sequences to protein sequences
+        ESL_TRANSLATE(ch_fasta)
 
         // Store sequences in the sequence database
-        seq_db_path = LOAD_ORFS(ch_translated, LOAD_SEQUENCES.out)
+        seq_db_path = LOAD_ORFS(ESL_TRANSLATE.out, LOAD_SEQUENCES.out)
     } else {
         // Store the input seqs in the internal ips6 seq db
-        seq_db_path = LOAD_SEQUENCES(fasta, params.nucleic)
+        seq_db_path = LOAD_SEQUENCES(ch_fasta, is_nucleic)
     }
+
     // Build batches of unique protein seqs for the analysis
-    SPLIT_FASTA(seq_db_path, params.batchSize, params.nucleic)
+    SPLIT_FASTA(seq_db_path, batch_size, is_nucleic)
 
     fastaList = SPLIT_FASTA.out.collect()
     // Convert a list (or single file path) to a list of tuples containing indexed fasta file paths
