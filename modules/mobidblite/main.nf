@@ -11,7 +11,7 @@ process RUN_MOBIDBLITE {
 
     script:
     """
-    idrpred ${fasta} output.tsv
+    idrpred --tempdir . ${fasta} output.tsv
     """
 }
 
