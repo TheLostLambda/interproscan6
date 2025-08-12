@@ -521,6 +521,7 @@ def writeSFLD(Map match, JsonGenerator jsonWriter) {
                 "hmmStart"          : loc.hmmStart,
                 "hmmEnd"            : loc.hmmEnd,
                 "hmmLength"         : loc.hmmLength,
+                "hmmBounds"         : Location.getHmmBounds(loc.hmmBounds),
                 "evalue"            : loc.evalue,
                 "score"             : loc.score,
                 "envelopeStart"     : loc.envelopeStart,
