@@ -42,7 +42,7 @@ process PREPARE_TREEGRAFTER {
                 m2.treegrafter = new TreeGrafter(null)
                 return m2
             }
-            .findAll { it != null && it.evalue <= 0.00000001 }
+            .findAll { it != null }
 
         Match bestMatch = filteredMatches.max { it.score }
         return bestMatch ? [(seqId): [(bestMatch.modelAccession): bestMatch]] : [:]
