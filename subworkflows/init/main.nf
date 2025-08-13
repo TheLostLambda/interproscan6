@@ -85,7 +85,7 @@ workflow INIT_PIPELINE {
         }
 
         if (invalidApps) {
-            log.error "Precomputed results for DeepTMHMM, SignalP_Euk, and SignalP_Prok are not yet available in the Matches API. To ensure these analyses run locally and produce results, please add the '--no-matches-api' flag when invoking the pipeline."
+            log.error "Precomputed results for DeepTMHMM, SignalP_Euk, SignalP_Prok and TMbed are not yet available in the Matches API. To ensure these analyses run locally and produce results, please add the '--no-matches-api' flag when invoking the pipeline."
             exit 1
         }
     }
