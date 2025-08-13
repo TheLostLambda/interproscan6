@@ -81,7 +81,7 @@ workflow INIT_PIPELINE {
 
     if (!no_matches_api) {
         invalidApps = apps.findAll { app ->
-            ["signalp_euk", "signalp_prok", "deeptmhmm"].contains(app)
+            ["signalp_euk", "signalp_prok", "deeptmhmm", "tmbed"].contains(app)
         }
 
         if (invalidApps) {
