@@ -16,8 +16,7 @@ process RUN_TMBED_CPU {
     tmbed predict
         -f ${fasta} \
         -m /t5 \
-        -p tmbed.pred \
-        --out-format=2
+        -p tmbed.pred
     """
 }
 
@@ -36,14 +35,13 @@ process RUN_TMBED_GPU {
         -f ${fasta} \
         -m /t5 \
         -p tmbed.pred \
-        --use-gpu \
-        --out-format=2
+        --use-gpu
     """
 }
 
 process PARSE_TMBED {
     label 'tiny'
-    exector 'local'
+    executor 'local'
 
     input:
     tuple val(meta), val(tmbed_out)
@@ -62,7 +60,7 @@ process PARSE_TMBED {
     ]
 
     def startNewMatch(String seqId, String tmbed_model, Integer position) {
-        def (modelAc, modelSig) = MODEL_TYPES[tmbedModel]
+        def (modelAc, modelSig) = MODEL_TYPES[tmbed_model]
         hits[seqId].computeIfAbsent(modelAc) {
             Match match = new Match(modelAc)
             match.signature = modelSig
@@ -78,8 +76,7 @@ process PARSE_TMBED {
     Match match
     String seqMd5  = null
     String modelAc = null
-    int position = 0
-    int start    = 0
+    Boolean seqLine = false
 
     new File(tmbed_out.toString()).eachLine { line ->
         if (line.startsWith(">")) { // Processing a new protein
@@ -90,27 +87,29 @@ process PARSE_TMBED {
             // Start a new protein
             seqMd5 = line.trim(">").trim()
             modelAc = null
-            position = 0
+            seqLine = true
             hits.computeIfAbsent(seqMd5) { [:] }
         } else { // Processing a site in the protein
-            lineData = line.split("\t")
-            assert lineData.size() == 7
-            tmbedModel = lineData[1]
-            if (tmbedModel == "PRD") { return } // Header row for this protein
-
-            position ++
-            if (tmbedModel != ".") { // We have a hit!
-                if (!modelAc) { // Found the start of a new hit
-                    (modelAc, start) = startNewMatch(seqMd5, tmbedModel, position)
-                } else if (modelAc && modelAc != MODEL_TYPES[tmbedModel][0]) { // Found a new and different hit
-                    endMatch(start, position)  // Process the previous hit
-                    (modelAc, start) = startNewMatch(seqMd5, tmbedModel, position)
-                }
-                // ELSE (tmbedModel != '.' and modelAc == MODEL_TYPES[tmbedModel][0]) -> processing the same match
-            } else {
-                if (modelAc) {
-                    endMatch(start, position) // Process the previous hit
-                    modelAc = null // Not currently parsing a hit
+            if (seqLine) {
+                seqLine = false
+                return
+            }
+            position = 0
+            for (character in line) { // SSSSSSSSSSSS.........BBBBBBBBBB.................bbbb
+                position ++
+                if (character != ".") {  // We have a hit!
+                    if (!modelAc) { // Found the start of a new hit
+                        (modelAc, start) = startNewMatch(seqMd5, character, position)
+                    } else if (modelAc && modelAc != MODEL_TYPES[character][0]) { // Found a new and different hit
+                        endMatch(start, position)  // Process the previous hit
+                        (modelAc, start) = startNewMatch(seqMd5, character, position)
+                    }
+                    // ELSE (character != '.' and modelAc == MODEL_TYPES[character][0]) -> processing the same match
+                } else {
+                    if (modelAc) {
+                        endMatch(start, position) // Process the previous hit
+                        modelAc = null // Not currently parsing a hit
+                    }
                 }
             }
         }
