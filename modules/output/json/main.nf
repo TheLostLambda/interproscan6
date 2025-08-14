@@ -241,6 +241,9 @@ def writeMatch(String proteinMd5, Map match, JsonGenerator jsonWriter) {
         case "deeptmhmm":
             writeMinimalist(match, jsonWriter)
             break
+        case "tmbed":
+            writeMinimalist(match, jsonWriter)
+            break
         default:
             throw new UnsupportedOperationException("Unknown database '${memberDB}' for query protein with MD5 ${proteinMd5}")
     }
