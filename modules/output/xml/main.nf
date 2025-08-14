@@ -189,6 +189,9 @@ def addMatchNode(String proteinMd5, Map match, def xml) {
         case "deeptmhmm":
             matchNodeAttributes = null
             break
+        case "tmbed":
+            matchNodeAttributes = null
+            break
         default:
             throw new UnsupportedOperationException("Unknown database '${memberDB}' for query protein with MD5 ${proteinMd5}")
     }
@@ -383,6 +386,9 @@ def addLocationNodes(String memberDB, String proteinMd5, Map match, def xml) {
                     break
                 case "tmhmm":
                 case "deeptmhmm":
+                    locationAttributes = fmMinimalistLoctationNode(loc)
+                    break
+                case "tmbed":
                     locationAttributes = fmMinimalistLoctationNode(loc)
                     break
                 default:
