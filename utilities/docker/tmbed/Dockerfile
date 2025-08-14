@@ -35,5 +35,3 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /opt/tmbed/models /opt/tmbed/models
 
 ENV CUBLAS_WORKSPACE_CONFIG=:4096:8
-
-ENTRYPOINT ["tmbed"]
