@@ -15,11 +15,19 @@ process RUN_RPSBLAST {
 
     script:
     """
-    export LD_LIBRARY_PATH="/opt/blast/lib"
-    rpsblast \
-        -query ${fasta} \
-        -db "${cdd_dir}/${rpsblast_db}" \
-        -out rpsblast.out \
+    # Find rpsblast location and set appropriate lib path
+    RPSBLAST_PATH=\$(which rpsblast)
+    BLAST_DIR=\$(dirname "\$RPSBLAST_PATH")
+
+    # Check for lib directory in common locations relative to rpsblast
+    if [ -d "\${BLAST_DIR}/lib" ]; then
+        export LD_LIBRARY_PATH="\${BLAST_DIR}/lib:\$LD_LIBRARY_PATH"
+    fi
+
+    rpsblast \\
+        -query ${fasta} \\
+        -db "${cdd_dir}/${rpsblast_db}" \\
+        -out rpsblast.out \\
         -evalue 0.01 -seg no -outfmt 11
     """
 }
