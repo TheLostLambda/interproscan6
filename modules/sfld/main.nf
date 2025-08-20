@@ -15,7 +15,7 @@ process SEARCH_SFLD {
 
     script:
     """
-    /opt/hmmer3/bin/hmmsearch \
+    hmmsearch \
         -Z 378 --acc \
         --cut_ga \
         --cpu ${task.cpus} \

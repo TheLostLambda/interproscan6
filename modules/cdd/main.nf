@@ -16,7 +16,7 @@ process RUN_RPSBLAST {
     script:
     """
     export LD_LIBRARY_PATH="/opt/blast/lib"
-    /opt/blast/rpsblast \
+    rpsblast \
         -query ${fasta} \
         -db "${cdd_dir}/${rpsblast_db}" \
         -out rpsblast.out \
@@ -49,7 +49,7 @@ process RUN_RPSPROC {
 
     script:
     """
-    /opt/rpsbproc/RpsbProc-x64-linux/rpsbproc \
+    rpsbproc \
         --infile ${rpsblast_out} \
         --outfile rpsbproc.out \
         --data-path ${cdd_dir}/${rpsproc_db} \
