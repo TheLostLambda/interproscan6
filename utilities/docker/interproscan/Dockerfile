@@ -14,6 +14,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+
 # Pull pftools for HAMAP and PROSITE
 FROM sibswiss/pftools AS pftools
 
@@ -21,7 +22,6 @@ FROM sibswiss/pftools AS pftools
 FROM interproscan-base
 COPY --from=pftools /var/lib/pftools/bin/pfsearchV3 /opt/pftools/pfsearchV3
 COPY --from=pftools /var/lib/pftools/bin/pfscanV3 /opt/pftools/pfscanV3
-COPY --from=pftools /var/lib/pftools/bin/ps_scan.pl /opt/pftools/ps_scan.pl
 
 # Get binary for coils, only used by Coils
 WORKDIR /opt/coils

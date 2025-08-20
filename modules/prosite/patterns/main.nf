@@ -20,7 +20,7 @@ process RUN_PFSCAN {
 
     script:
     """
-        perl ps_scan.pl \
+        perl ${projectDir}/bin/prosite/ps_scan.pl \
         ${fasta} \
         -d ${dirpath}/${datfile} \
         --pfscan pfscanV3 \
