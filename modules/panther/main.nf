@@ -139,7 +139,7 @@ process RUN_TREEGRAFTER {
             def fastaPath = entry[2]
            
            // Run EPA-ng
-            def epang_command = "/opt/epa-ng/bin/epa-ng"
+            def epang_command = "epa-ng"
             epang_command += " -G 0.05"
             epang_command += " -m WAG"
             epang_command += " -T ${task.cpus}"

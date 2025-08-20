@@ -14,7 +14,7 @@ process RUN_HMMER {
 
     script:
     """
-    /opt/hmmer3/bin/hmmsearch \
+    hmmsearch \
         ${options} \
         --cpu ${task.cpus} \
         ${hmmdir}/${hmmfile} ${fasta} > hmmsearch.out

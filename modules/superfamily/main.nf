@@ -19,7 +19,7 @@ process SEARCH_SUPERFAMILY {
 
     script:
     """
-    /opt/hmmer3/bin/hmmscan \
+    hmmscan \
         -E 10 -Z 15438 \
         --cpu ${task.cpus} \
         ${dirpath}/${hmm} ${fasta} > hmmscan.out
