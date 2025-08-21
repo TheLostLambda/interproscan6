@@ -83,7 +83,7 @@ class InterProScan {
             // description: "define maximum number of workers available for the InterProScan when running locally."
         ],
         [
-            name: "max-cpus",
+            name: "cpus",
             description: null
         ],
         [
