@@ -15,7 +15,7 @@ process RUN_TMBED_CPU {
     """
     tmbed predict \
         -f ${fasta} \
-        -m /t5 \
+        -m /opt/tmbed/models \
         -p tmbed.pred
     """
 }
@@ -33,7 +33,7 @@ process RUN_TMBED_GPU {
     """
     tmbed predict \
         -f ${fasta} \
-        -m /t5 \
+        -m /opt/tmbed/models \
         -p tmbed.pred \
         --use-gpu
     """
@@ -51,66 +51,61 @@ process PARSE_TMBED {
 
     exec:
     SignatureLibraryRelease LIBRARY = new SignatureLibraryRelease("TMbed", "1.0.2")
-    def MODEL_TYPES = [
-        "b": ["TMbed-b", new Signature("TMbed-b", "TMbeta_out-to-in", "Transmembrane beta strand (OUT->IN orientation)", LIBRARY, null)],
-        "B": ["TMbed-B", new Signature("TMbed-B", "TMbeta-in-to-out", "Transmembrane beta strand (IN->OUT orientation)", LIBRARY, null)],
-        "h": ["TMbed-h", new Signature("TMbed-h", "TMhelix-out-to-in", "Transmembrane alpha helix (OUT->IN orientation)", LIBRARY, null)],
-        "H": ["TMbed-H", new Signature("TMbed-H", "TMhelix-in-to-out", "Transmembrane alpha helix (IN->OUT orientation)", LIBRARY, null)],
-        "S": ["TMbed-S", new Signature("TMbed-S", "Signal_peptide", "Signal peptide", LIBRARY, null)]
+    def MODEL_TYPES = [ // Sig(acc, name, desc, lib, entry)
+        "b": new Signature("TMbeta_out-to-in",  "TMbeta_out-to-in",  null, LIBRARY, null),
+        "B": new Signature("TMbeta_in-to-out",  "TMbeta-in-to-out",  null, LIBRARY, null),
+        "h": new Signature("TMhelix_out-to-in", "TMhelix-out-to-in", null, LIBRARY, null),
+        "H": new Signature("TMhelix_in-to-out", "TMhelix-in-to-out", null, LIBRARY, null),
+        "S": new Signature("Signal_peptide",    "Signal peptide",    null, LIBRARY, null)
     ]
+
+    def startNewMatch(String symbol) {
+        Signature signature = MODEL_TYPES[symbol]
+        Match match = hits[seqMd5].computeIfAbsent(signature.accession) {
+            Match newMatch = new Match(signature.accession)
+            newMatch.signature = modelSig
+            newMatch
+        }
+        return match
+    }
 
     Map<String, Map<String, Match>> hits = [:]
     Match currentMatch = null
     String seqMd5 = null
-    String modelAc = null
-    Integer start = null
-    Integer position = null
-    Boolean seqLine = false
-
+    def lineCounter = 0
+    /* TMbed output:
+    >seqId
+    sequence
+    prediction */
     new File(tmbed_out.toString()).eachLine { line ->
-        if (line.startsWith(">")) { // Processing a new protein
-            // Store a match for the previous protein
-            if (modelAc && currentMatch && start != null) {
-                currentMatch.addLocation(new Location(start, position))
-            }
-            // Start a new protein
-            seqMd5 = line.replace(">", "").trim()
-            modelAc = null
+        line = line.trim()
+        if (lineCounter % 3 == 0) {
+            seqMd5       = line.substring(1)
             currentMatch = null
-            start = null
-            seqLine = true
             hits.computeIfAbsent(seqMd5) { [:] }
-        } else { // Processing a site in the protein
-            if (seqLine) {
-                seqLine = false
-                return
-            }
-            position = 0
-            for (character in line) { // SSSSSSSSSSSS.........BBBBBBBBBB.................bbbb
-                position++
-                if (character != ".") {  // We have a hit!
-                    if (!modelAc) { // Found the start of a new hit
-                        (hits, modelAc, start, currentMatch) = startNewMatch(MODEL_TYPES, hits, seqMd5, character, position)
-                    } else if (modelAc && modelAc != MODEL_TYPES[character][0]) { // Found a new and different hit
-                        currentMatch.addLocation(new Location(start, position - 1))  // Process the previous hit
-                        (hits, modelAc, start, currentMatch) = startNewMatch(MODEL_TYPES, hits, seqMd5, character, position)
+        } else if (lineCounter % 3 == 2) {
+            line.eachWithIndex { symbol, position ->
+                if (character != ".") { // Found a hit
+                    if (!currentMatch) {  // Start a new match
+                        currentMatch = startNewMatch(symbol)
+                        start = position + 1
+                    } else if (currentMatch.accession != MODEL_TYPES[symbol].accession) { // Found a new hit
+                        currentMatch.addLocation(new Location(start, position))
+                        currentMatch = startNewMatch(symbol)
+                        start = position + 1
                     }
-                    // ELSE (character != '.' and modelAc == MODEL_TYPES[character][0]) -> processing the same match
+                    // else, parsing another symbol from the same currentMatch/hit
                 } else {
-                    if (modelAc && currentMatch) {
-                        currentMatch.addLocation(new Location(start, position - 1)) // Process the previous hit
-                        modelAc = null // Not currently parsing a hit
-                        currentMatch = null
-                        start = null
-                    }
+                    currentMatch.addLocation(new Location(start, position))
+                    currentMatch = null
                 }
             }
         }
-    }
-
-    // Add the last match if there is one
-    if (modelAc && currentMatch && start != null && seqMd5) {
-        currentMatch.addLocation(new Location(start, position))
+        // Add the final match for this sequence
+        if (currentMatch) {
+            currentMatch.addLocation(new Location(start, position))
+        }
+        lineCounter += 1
     }
 
     def outputFilePath = task.workDir.resolve("tmbed.json")
@@ -118,12 +113,3 @@ process PARSE_TMBED {
     new File(outputFilePath.toString()).write(json)
 }
 
-def startNewMatch(Map model_type, Map hits, String seq_id, String tmbed_model, Integer position) {
-    def (modelAc, modelSig) = model_type[tmbed_model]
-    def match = hits[seq_id].computeIfAbsent(modelAc) {
-        Match newMatch = new Match(modelAc)
-        newMatch.signature = modelSig
-        newMatch
-    }
-    return [hits, modelAc, position, match]
-}
