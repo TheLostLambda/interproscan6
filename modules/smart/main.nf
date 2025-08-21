@@ -14,7 +14,7 @@ process PREFILTER_SMART {
 
     script:
     """
-    /opt/hmmer3/bin/hmmsearch \
+    hmmsearch \
         -E 100 --domE 100 --incE 100 --incdomE 100 \
         ${dirpath}/${hmmfile} ${fasta} > hmmsearch.out
     """
@@ -113,7 +113,7 @@ process SEARCH_SMART {
         smarts.each { smartFile ->
             fasta.each { chunkFile ->
                 String hmmFilePath = "${dirpath.toString()}/${hmmdir}/${smartFile}.hmm"  // reassign to a var so the cmd can run
-                commands += "/opt/hmmer2/bin/hmmpfam"
+                commands += "hmmpfam"
                 commands += " --acc -A 0 -E 0.01 -Z 350000"
                 commands += " $hmmFilePath ${chunkFile} >> hmmpfam.out\n"
             }
