@@ -154,22 +154,20 @@ def proteinFormatLine(seqId, match, loc, parentId, cdsStart, strand) {
             break
         case "TMHMM":
         case "DeepTMHMM":
-            feature_type = match.signature.accession.toUpperCase() == "TRANSMEMBRANE ALPHA HELIX" ? "transmembrane_alpha_helix" :
-                match.signature.accession.toUpperCase() == "TRANSMEMBRANE BETA BARREL" ? "transmembrane_beta_barrel" :
-                match.signature.accession.toUpperCase() == "PERIPLASMIC DOMAIN" ? "periplasmic_domain" : "signal_peptide"
+            feature_type = match.signature.accession.toUpperCase() == "TRANSMEMBRANE ALPHA HELIX" ? "transmembrane_helix" :
+                match.signature.accession.toUpperCase() == "TRANSMEMBRANE BETA BARREL" ? "transmembrane_polypeptide_region" :
+                match.signature.accession.toUpperCase() == "PERIPLASMIC DOMAIN" ? "non_cytoplasmic_polypeptide_region" : "signal_peptide"
             break
         case "Phobius":
             feature_type = match.signature.name.toUpperCase() == "CYTOPLASMIC DOMAIN" ? "cytoplasmic_polypeptide_region" :
                 match.signature.name.toUpperCase() == "NON CYTOPLASMIC DOMAIN" ? "non_cytoplasmic_polypeptide_region" :
-                match.signature.name.toUpperCase() == "TRANSMEMBRANE REGION" ? "transmembrane_region" :
-                match.signature.name.toUpperCase() == "SIGNAL PEPTIDE N-REGION" ? "signalp_peptide_n_region" :
-                match.signature.name.toUpperCase() == "SIGNAL PEPTIDE H-REGION" ? "signalp_peptiide_h_region" : "signal_peptide_c_region"
+                match.signature.name.toUpperCase() == "TRANSMEMBRANE REGION" ? "transmembrane_polypeptide_region" : "signal_peptide"
             break
         case "TMbed":
-            feature_type = match.signature.name.toUpperCase() == "TMHELIX-OUT-TO-IN" ? "transmembrane_alpha_helix_out_to_in" :
-                match.signature.name.toUpperCase() == "TMHELIX-IN-TO-OUT" ? "transmembrane_alpha_helix_in_to_out" :
-                match.signature.name.toUpperCase() == "TMBETA-OUT-TO-IN" ? "transmembrane_beta_strand_out_to_in" :
-                match.signature.name.toUpperCase() == "TMBETA-IN-TO-OUT" ? "transmembrane_beta_strand_in_to_out" : "signal_peptide"
+            feature_type = match.signature.name.toUpperCase() == "TMHELIX-OUT-TO-IN" ? "transmembrane_helix" :
+                match.signature.name.toUpperCase() == "TMHELIX-IN-TO-OUT" ? "transmembrane_helix" :
+                match.signature.name.toUpperCase() == "TMBETA-OUT-TO-IN" ? "transmembrane_polypeptide_region" :
+                match.signature.name.toUpperCase() == "TMBETA-IN-TO-OUT" ? "transmembrane_polypeptide_region" : "signal_peptide"
             break
         default:
             // HAMAP, MobiDB-lite, Panther, PIRSF, PIRSR, SFLD
