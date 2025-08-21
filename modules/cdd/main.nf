@@ -22,10 +22,10 @@ process RUN_RPSBLAST {
         export LD_LIBRARY_PATH="\${BLAST_DIR}/lib:\$LD_LIBRARY_PATH"
     fi
 
-    rpsblast \\
-        -query ${fasta} \\
-        -db "${cdd_dir}/${rpsblast_db}" \\
-        -out rpsblast.out \\
+    rpsblast \
+        -query ${fasta} \
+        -db "${cdd_dir}/${rpsblast_db}" \
+        -out rpsblast.out \
         -evalue 0.01 -seg no -outfmt 11
     """
 }
