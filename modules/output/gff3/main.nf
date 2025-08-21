@@ -164,10 +164,10 @@ def proteinFormatLine(seqId, match, loc, parentId, cdsStart, strand) {
                 match.signature.name.toUpperCase() == "TRANSMEMBRANE REGION" ? "transmembrane_polypeptide_region" : "signal_peptide"
             break
         case "TMbed":
-            feature_type = match.signature.name.toUpperCase() == "TMHELIX-OUT-TO-IN" ? "transmembrane_helix" :
-                match.signature.name.toUpperCase() == "TMHELIX-IN-TO-OUT" ? "transmembrane_helix" :
-                match.signature.name.toUpperCase() == "TMBETA-OUT-TO-IN" ? "transmembrane_polypeptide_region" :
-                match.signature.name.toUpperCase() == "TMBETA-IN-TO-OUT" ? "transmembrane_polypeptide_region" : "signal_peptide"
+            feature_type = match.signature.accession.toUpperCase() == "TMHELIX_IN-TO-OUT" ? "transmembrane_helix" :
+                match.signature.accession.toUpperCase() == "TMHELIX_OUT-TO-IN" ? "transmembrane_helix" :
+                match.signature.accession.toUpperCase() == "TMBETA-OUT-TO-IN" ? "transmembrane_polypeptide_region" :
+                match.signature.accession.toUpperCase() == "TMBETA-IN-TO-OUT" ? "transmembrane_polypeptide_region" : "signal_peptide"
             break
         default:
             // HAMAP, MobiDB-lite, Panther, PIRSF, PIRSR, SFLD
