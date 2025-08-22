@@ -3,7 +3,7 @@ import groovy.json.JsonOutput
 import Match
 
 process RUN_TMBED_CPU {
-    label 'large', 'tmbed_container'
+    label 'large', 'dynamic', 'tmbed_container'
 
     input:
     tuple val(meta), path(fasta)
