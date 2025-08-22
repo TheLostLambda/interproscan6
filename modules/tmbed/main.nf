@@ -16,6 +16,7 @@ process RUN_TMBED_CPU {
     tmbed predict \
         -f ${fasta} \
         -m /opt/tmbed/models \
+        -t ${task.cpus} \
         -p tmbed.pred
     """
 }
