@@ -27,6 +27,8 @@ FROM python:3.9-slim
 
 ENV TZ=Europe/London
 
+RUN apt-get update && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
+
 # Copy Python packages and bins
 COPY --from=builder /usr/local/lib/python3.9 /usr/local/lib/python3.9
 COPY --from=builder /usr/local/bin /usr/local/bin
