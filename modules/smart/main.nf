@@ -15,7 +15,7 @@ process PREFILTER_SMART {
     script:
     """
     hmmsearch \
-        -E 100 --domE 100 --incE 100 --incdomE 100 \
+        -E 100 --domE 100 --incE 100 --incdomE 100 --cpu ${task.cpus} \
         ${dirpath}/${hmmfile} ${fasta} > hmmsearch.out
     """
 }
@@ -114,7 +114,7 @@ process SEARCH_SMART {
             fasta.each { chunkFile ->
                 String hmmFilePath = "${dirpath.toString()}/${hmmdir}/${smartFile}.hmm"  // reassign to a var so the cmd can run
                 commands += "hmmpfam"
-                commands += " --acc -A 0 -E 0.01 -Z 350000"
+                commands += " --acc -A 0 -E 0.01 -Z 350000 --cpu ${task.cpus}"
                 commands += " $hmmFilePath ${chunkFile} >> hmmpfam.out\n"
             }
         }
