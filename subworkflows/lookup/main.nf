@@ -21,25 +21,21 @@ workflow LOOKUP {
         workflow_manifest
     )
     api_info = PREPARE_LOOKUP.out[0]
-    api_info.view { "API_INFO: ${it}\n" }
 
-    PREPARE_LOOKUP.out[0]
+    api_info
         .combine(ch_seqs)
         .map { url, apiApps, err, index, fasta ->
             tuple(index, fasta, apps, apiApps, url, chunk_size, max_retries, err)
         }
         .set { lookup_input }
 
-    lookup_input.view { "LOOKUP_INPUT: ${it}\n" }
-
     LOOKUP_MATCHES(lookup_input)
     precalculatedMatches = LOOKUP_MATCHES.out[0]
     noMatchesFasta = LOOKUP_MATCHES.out[1]
-
-    precalculatedMatches.view { "PRECALCULATED_MATCHES: ${it}\n" }
-    noMatchesFasta.view { "NO_MATCHES_FASTA: ${it}\n" }
+    noApiFasta = LOOKUP_MATCHES.out[2]
 
     emit:
     precalculatedMatches
     noMatchesFasta
+    noApiFasta
 }

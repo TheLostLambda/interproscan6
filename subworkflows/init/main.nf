@@ -8,7 +8,6 @@ workflow INIT_PIPELINE {
     formats
     outdir
     outprefix
-    no_matches_api
     interpro_version
     skip_intepro
     skip_applications
@@ -77,17 +76,6 @@ workflow INIT_PIPELINE {
         exit 1
     } else {
         outprefix = "${outdir}/${outprefix}"
-    }
-
-    if (!no_matches_api) {
-        invalidApps = apps.findAll { app ->
-            ["signalp_euk", "signalp_prok", "deeptmhmm", "tmbed"].contains(app)
-        }
-
-        if (invalidApps) {
-            log.error "Precomputed results for DeepTMHMM, SignalP_Euk, SignalP_Prok and TMbed are not yet available in the Matches API. To ensure these analyses run locally and produce results, please add the '--no-matches-api' flag when invoking the pipeline."
-            exit 1
-        }
     }
 
     emit:

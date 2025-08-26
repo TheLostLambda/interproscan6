@@ -64,6 +64,7 @@ process LOOKUP_MATCHES {
     output:
     tuple val(index), path("calculatedMatches.json")
     tuple val(index), path("noLookup.fasta"), optional: true
+    tuple val(index), path("noApi.fasta"), optional: true
 
     exec:
     String _error = error  // reassign to avoid 'variable' already used error when logging
@@ -73,6 +74,8 @@ process LOOKUP_MATCHES {
 
     def noLookupFastaPath = task.workDir.resolve("noLookup.fasta")
     def noLookupFasta = new StringBuilder()
+
+    def noApiFastaPath = task.workDir.resolve("noApi.fasta")
 
     Map<String, String> sequences = FastaFile.parse(fasta.toString())  // [md5: sequence]
     def md5List = sequences.keySet().toList().sort()
@@ -124,7 +127,7 @@ process LOOKUP_MATCHES {
         if (missingApps) {
             log.warn "The following applications are not available via the Matches API and will be run locally:\n${missingApps.join(", ")}\n" +
             "Pre-calculated matches will not be retrieved for these applications, and their analyses will be run locally"
-            // add writing out fasta for missing apps
+            new File(noApiFastaPath.toString()).write(new File(fasta.toString()).text)
         }
 
         def jsonMatches = JsonOutput.toJson(calculatedMatches)

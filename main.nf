@@ -30,7 +30,6 @@ workflow {
         params.formats,
         params.outdir,
         params.outprefix,
-        params.noMatchesApi,
         params.interpro,
         params.skipInterpro,
         params.skipApplications,
