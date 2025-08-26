@@ -80,7 +80,7 @@ RUN mkdir /opt/hmmer2 && \
     tar -xzf hmmer-2.3.2.tar.gz && \
     rm hmmer-2.3.2.tar.gz && \
     cd hmmer-2.3.2 && \
-    ./configure --prefix /opt/hmmer2 && \
+    ./configure --enable-threads --prefix /opt/hmmer2 && \
     make && \
     make install && \
     rm -rf /opt/hmmer-2.3.2 && \
