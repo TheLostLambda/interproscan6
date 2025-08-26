@@ -3,7 +3,7 @@ import groovy.json.JsonOutput
 import Match
 
 process SEARCH_SFLD {
-    label 'mini', 'ips6_container'
+    label 'mini', 'dynamic', 'ips6_container'
 
     input:
     tuple val(meta), path(fasta)

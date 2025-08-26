@@ -2,7 +2,7 @@ import java.nio.file.Files
 import groovy.json.JsonOutput
 
 process PREFILTER_SMART {
-    label 'small', 'ips6_container'
+    label 'small', 'dynamic', 'ips6_container'
 
     input:
     tuple val(meta), path(fasta)
@@ -15,7 +15,7 @@ process PREFILTER_SMART {
     script:
     """
     hmmsearch \
-        -E 100 --domE 100 --incE 100 --incdomE 100 \
+        -E 100 --domE 100 --incE 100 --incdomE 100 --cpu ${task.cpus} \
         ${dirpath}/${hmmfile} ${fasta} > hmmsearch.out
     """
 }
@@ -94,7 +94,7 @@ process PREPARE_SMART {
 }
 
 process SEARCH_SMART {
-    label 'medium', 'ips6_container'
+    label 'medium', 'dynamic', 'ips6_container'
 
     input:
     tuple val(meta), path(fasta), val(smarts)
@@ -114,7 +114,7 @@ process SEARCH_SMART {
             fasta.each { chunkFile ->
                 String hmmFilePath = "${dirpath.toString()}/${hmmdir}/${smartFile}.hmm"  // reassign to a var so the cmd can run
                 commands += "hmmpfam"
-                commands += " --acc -A 0 -E 0.01 -Z 350000"
+                commands += " --acc -A 0 -E 0.01 -Z 350000 --cpu ${task.cpus}"
                 commands += " $hmmFilePath ${chunkFile} >> hmmpfam.out\n"
             }
         }

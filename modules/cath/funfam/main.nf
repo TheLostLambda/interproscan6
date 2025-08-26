@@ -40,7 +40,7 @@ process PREPARE_FUNFAM {
 }
 
 process SEARCH_FUNFAM {
-    label 'medium', 'ips6_container'
+    label 'medium', 'dynamic', 'ips6_container'
 
     input:
     tuple val(meta), val(meta2), path(fasta), val(supfams)
