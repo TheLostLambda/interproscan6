@@ -22,6 +22,7 @@ workflow LOOKUP {
     )
     api_info = PREPARE_LOOKUP.out[0]
 
+    // Pass the url from PREPARE_LOOKUP to LOOKUP_MATCHES to avoid an 'invalid method invocation' error
     api_info
         .combine(ch_seqs)
         .map { url, apiApps, err, index, fasta ->
@@ -39,3 +40,6 @@ workflow LOOKUP {
     noMatchesFasta
     noApiFasta
 }
+
+
+// Build and emit the sets of applications

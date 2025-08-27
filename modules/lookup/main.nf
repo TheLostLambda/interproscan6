@@ -24,7 +24,6 @@ process PREPARE_LOOKUP {
     Map info = HTTPRequest.fetch("${HTTPRequest.sanitizeURL(_matchesApiUrl)}/info".toString(), null, 0, true)
     if (info == null) {
         _error = "An error occurred while querying the Matches API [/info]; analyses will be run locally"
-        matchesApiUrl = null
     } else {
         def apiVersion = info.api ?: "X.Y.Z"
         def majorVersion = apiVersion.split("\\.")[0]
@@ -32,22 +31,20 @@ process PREPARE_LOOKUP {
             _error = "${workflow_manifest.name} ${workflow_manifest.version}" +
                     " is not compatible with the Matches API at ${_matchesApiUrl};" +
                     " analyses will be run locally"
-            matchesApiUrl = null
         } else if (db_releases) {  // can be null if we don't need data for the selected apps (e.g. mobidblite)
             if (db_releases["interpro"]["version"] != info.release) {
                 _error = "The local InterPro version does not match the match API release (Local: ${db_releases['interpro']}, Matches API: ${info.release}).\n" +
                         "Pre-calculated matches will not be retrieved, and analyses will be run locally"
-                matchesApiUrl = null
             } else {
                 if (info?.analyses) {
                     _matchesApiApps.addAll(info.analyses*.name.collect { it.toLowerCase().replaceAll("[-\\s]", "") })
                 } else {
                     _error = "Could not retrieve the list of available analyses from the Matches API; analyses will be run locally"
-                    matchesApiUrl = null
                 }
             }
         }
     }
+
     matchesApiUrl = _matchesApiUrl
     matchesApiApps = _matchesApiApps
     error = _error
@@ -59,7 +56,7 @@ process LOOKUP_MATCHES {
     executor 'local'
 
     input:
-    tuple val(index), val(fasta), val(applications), val(api_applications), val(url), val(chunk_size), val(max_retries), val(error)
+    tuple val(index), val(fasta), val(all_applications), val(api_applications), val(url), val(chunk_size), val(max_retries), val(error)
 
     output:
     tuple val(index), path("calculatedMatches.json")
@@ -67,7 +64,10 @@ process LOOKUP_MATCHES {
     tuple val(index), path("noApi.fasta"), optional: true
 
     exec:
-    String _error = error  // reassign to avoid 'variable' already used error when logging
+    // reassign to avoid 'variable' already used error when logging
+    String _error = error  
+    List<String> _allApps = all_applications.clone() as List<String>
+    List<String> _apiApps = api_applications.clone() as List<String>
 
     def calculatedMatchesPath = task.workDir.resolve("calculatedMatches.json")
     def calculatedMatches = [:]
@@ -82,9 +82,13 @@ process LOOKUP_MATCHES {
     def chunks = md5List.collate(chunk_size)
 
     String baseUrl = HTTPRequest.sanitizeURL(url.toString())
-    boolean success = _error ? false : true
 
-    if (success) {
+    // If there was an error in the PREPARE_LOOKUP step, or no applications are available via the API,
+    // skip the API querying and write out all sequences to noApi.fasta
+    boolean go = !_error && !_apiApps.isEmpty() // go-no-go signal
+    boolean success = !_error
+
+    if (go) {
         for (chunk in chunks) {
             String data = JsonOutput.toJson([md5: chunk])
             def response = HTTPRequest.fetch("${baseUrl}/matches", data, max_retries, true)
@@ -102,7 +106,7 @@ process LOOKUP_MATCHES {
                             
                             String appName = library.toLowerCase().replaceAll("[-\\s]", "")
 
-                            if (applications.contains(appName)) {
+                            if (_allApps.contains(appName)) {
                                 matchMap = transformMatch(matchMap, sequences[proteinMd5])
                                 calculatedMatches[proteinMd5][matchMap.modelAccession] = matchMap
                             }
@@ -122,10 +126,10 @@ process LOOKUP_MATCHES {
     }
 
     if (success) {
-        List<String> allApps = applications.clone() as List<String>
-        List<String> missingApps = allApps.findAll { !api_applications.contains(it) }
+        List<String> missingApps = _allApps.findAll { !_apiApps.contains(it) }
         if (missingApps) {
-            log.warn "The following applications are not available via the Matches API and will be run locally:\n${missingApps.join(", ")}\n" +
+            log.warn "The following applications are not available in the Matches API:\n" +
+            "${missingApps.join(", ")}\n" +
             "Pre-calculated matches will not be retrieved for these applications, and their analyses will be run locally"
             new File(noApiFastaPath.toString()).write(new File(fasta.toString()).text)
         }
@@ -134,8 +138,8 @@ process LOOKUP_MATCHES {
         new File(calculatedMatchesPath.toString()).write(JsonOutput.toJson(calculatedMatches))
         if (noLookupFasta.length() != 0) { new File(noLookupFastaPath.toString()).write(noLookupFasta.toString()) }
     } else {
-        log.warn _error
         // when the connection fails, write out ALL sequences to "noLookup.fasta". Consider all as unknown/novel
+        log.warn _error
         new File(calculatedMatchesPath.toString()).write(JsonOutput.toJson([:]))
         new File(noLookupFastaPath.toString()).write(new File(fasta.toString()).text)
     }
