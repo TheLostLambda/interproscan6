@@ -230,7 +230,7 @@ List<Prints> sortMatches(List<Prints> matches) {
         int evalueComparison = matchA.evalue <=> matchB.evalue
         if (evalueComparison != 0) return evalueComparison
 
-        int modelAccessionComparison = matchA.modelName <=> matchB.modelName
+        int modelAccessionComparison = matchA.modelId <=> matchB.modelId
         if (modelAccessionComparison != 0) return modelAccessionComparison
 
         int motifNumberComparison = matchA.motifNumber <=> matchB.motifNumber

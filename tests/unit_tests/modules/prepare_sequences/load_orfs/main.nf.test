@@ -10,7 +10,7 @@ nextflow_process {
             params {}
             process {
                 """
-                input[0] = [file("$baseDir/tests/data/channels/translated.fasta")]
+                input[0] = file("$baseDir/tests/data/channels/translated.fasta")
                 input[1] = file("$baseDir/tests/data/sequences/pre_nt_sequences.db")
                 """
             }

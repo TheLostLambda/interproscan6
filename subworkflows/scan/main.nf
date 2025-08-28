@@ -18,6 +18,7 @@ include { SFLD              } from "../sfld"
 include { SIGNALP           } from "../signalp"
 include { SMART             } from "../smart"
 include { SUPERFAMILY       } from "../superfamily"
+include { TMBED             } from "../tmbed"
 include { REPORT_NO_MATCHES } from "../../modules/no_matches"
 
 workflow SCAN {
@@ -244,6 +245,15 @@ workflow SCAN {
         )
 
         results = results.mix(SUPERFAMILY.out)
+    }
+
+    if (applications.contains("tmbed")) {
+        TMBED(
+            ch_seqs,
+            appsConfig.tmbed.use_gpu
+        )
+
+        results = results.mix(TMBED.out)
     }
 
     ch_results = ch_seqs.join(
