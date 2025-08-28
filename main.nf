@@ -86,10 +86,9 @@ workflow {
         Then run analyses on sequences not listed in the API */
         LOOKUP(
             ch_seqs,
-            applications,
+            matches_api_apps,
             db_releases,
             interproscan_version,
-            workflow.manifest,
             params.matchesApiUrl,
             params.matchesApiChunkSize,
             params.matchesApiMaxRetries
@@ -100,7 +99,7 @@ workflow {
         SCAN_SEQUENCES(
             no_matches_fastas,
             db_releases,
-            applications,
+            matches_api_apps,
             params.appsConfig,
             data_dir
         )
