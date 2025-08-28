@@ -72,7 +72,6 @@ workflow PREPARE_DATABASES {
 
             ch_interpro = Channel.value(["interpro", interpro_version, "${data_dir}/interpro/${interpro_version}"])
         } else {
-            println "Here"
             // Not found: download the InterPro metadata archive
             DOWNLOAD_INTERPRO(
                 ["interpro", "interpro", interpro_version, false, "${data_dir}/interpro/${interpro_version}"],
@@ -106,7 +105,6 @@ workflow PREPARE_DATABASES {
         ch_ready = ch_ready.mix(DOWNLOAD_DATABASE.out)
     }
 
-    println "Hallo"
     ch_ready = ch_ready.collect(flat: false)
     VALIDATE_DATA(ch_ready)
 

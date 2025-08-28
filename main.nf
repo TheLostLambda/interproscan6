@@ -50,9 +50,6 @@ workflow {
     formats              = INIT_PIPELINE.out.formats.val
     interpro_version     = INIT_PIPELINE.out.version.val
 
-    println "local_only_apps: ${local_only_apps}"
-    println "matches_api_apps: ${matches_api_apps}"
-
     PREPARE_DATABASES(
         local_only_apps,
         matches_api_apps,
@@ -67,8 +64,6 @@ workflow {
     )
     db_releases = PREPARE_DATABASES.out.versions
     interproscan_version = PREPARE_DATABASES.out.iprscan_major_minor
-
-    db_releases.view { "Using database versions: ${it}" }
 
     PREPARE_SEQUENCES(
         fasta_file,
@@ -104,9 +99,6 @@ workflow {
         )
         precalculated_matches = LOOKUP.out.precalculatedMatches
         no_matches_fastas     = LOOKUP.out.noMatchesFasta
-
-        precalculated_matches.view { "Precalculated matches: ${it}" }
-        no_matches_fastas.view { "No matches fasta: ${it}" }
 
         SCAN_REMAINING(
             no_matches_fastas,
