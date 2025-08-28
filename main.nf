@@ -4,7 +4,9 @@ include { INIT_PIPELINE      } from "./subworkflows/init"
 include { PREPARE_DATABASES  } from "./subworkflows/prepare/databases"
 include { PREPARE_SEQUENCES  } from "./subworkflows/prepare/sequences"
 include { LOOKUP             } from "./subworkflows/lookup"
-include { SCAN_SEQUENCES     } from "./subworkflows/scan"
+include { SCAN_SEQUENCES as SCAN_REMAINING;
+          SCAN_SEQUENCES as SCAN_LOCALLY;
+          SCAN_SEQUENCES     } from "./subworkflows/scan"
 include { COMBINE            } from "./subworkflows/combine"
 include { OUTPUT             } from "./subworkflows/output"
 
@@ -96,7 +98,7 @@ workflow {
         precalculated_matches = LOOKUP.out.precalculatedMatches
         no_matches_fastas     = LOOKUP.out.noMatchesFasta
 
-        SCAN_SEQUENCES(
+        SCAN_REMAINING(
             no_matches_fastas,
             db_releases,
             matches_api_apps,
@@ -104,12 +106,24 @@ workflow {
             data_dir
         )
 
-        def expandedScan = SCAN_SEQUENCES.out.flatMap { scan ->
+        SCAN_LOCALLY(
+            ch_seqs,
+            db_releases,
+            local_only_apps,
+            params.appsConfig,
+            data_dir
+        )
+
+        def expandedRemainingScan = SCAN_REMAINING.out.flatMap { scan ->
+            scan[1].collect { path -> [scan[0], path] }
+        }
+        def expandedLocalScan     = SCAN_LOCALLY.out.flatMap { scan ->
             scan[1].collect { path -> [scan[0], path] }
         }
 
-        combined = precalculated_matches.concat(expandedScan)
-        match_results = combined.groupTuple()
+        def allExpandedScans = expandedRemainingScan.concat(expandedLocalScan)
+        combined             = precalculated_matches.concat(allExpandedScans)
+        match_results        = combined.groupTuple()
     }
     // match_results format: [[meta, [member1.json, member2.json, ..., memberN.json]]
 
