@@ -60,6 +60,7 @@ workflow {
         data_dir,
         interpro_version,
         workflow.manifest.version,
+        params.noMatchesApi,
         params.goterms,
         params.pathways,
         params.globus
