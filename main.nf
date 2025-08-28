@@ -4,10 +4,9 @@ include { INIT_PIPELINE      } from "./subworkflows/init"
 include { PREPARE_DATABASES  } from "./subworkflows/prepare/databases"
 include { PREPARE_SEQUENCES  } from "./subworkflows/prepare/sequences"
 include { LOOKUP             } from "./subworkflows/lookup"
-include { SCAN as SCAN_LOCALLY;
-          SCAN as SCAN_REMAINING;
-          SCAN as SCAN_SEQUENCES;
-                             } from "./subworkflows/scan"
+include { SCAN_SEQUENCES as SCAN_REMAINING;
+          SCAN_SEQUENCES as SCAN_LOCALLY;
+          SCAN_SEQUENCES     } from "./subworkflows/scan"
 include { COMBINE            } from "./subworkflows/combine"
 include { OUTPUT             } from "./subworkflows/output"
 
@@ -34,21 +33,26 @@ workflow {
         params.outdir,
         params.outprefix,
         params.noMatchesApi,
+        params.matchesApiUrl,
         params.interpro,
         params.skipInterpro,
         params.skipApplications,
         params.goterms,
-        params.pathways
+        params.pathways,
+        workflow.manifest
     )
     fasta_file           = Channel.fromPath(INIT_PIPELINE.out.fasta.val)
-    applications         = INIT_PIPELINE.out.apps.val
+    local_only_apps      = INIT_PIPELINE.out.local_only_apps.val
+    matches_api_apps     = INIT_PIPELINE.out.matches_api_apps.val
+    api_version          = INIT_PIPELINE.out.api_version.val
     data_dir             = INIT_PIPELINE.out.datadir.val
     outprefix            = INIT_PIPELINE.out.outprefix.val
     formats              = INIT_PIPELINE.out.formats.val
     interpro_version     = INIT_PIPELINE.out.version.val
 
     PREPARE_DATABASES(
-        applications,
+        local_only_apps,
+        matches_api_apps,
         params.appsConfig,
         data_dir,
         interpro_version,
@@ -70,11 +74,11 @@ workflow {
 
     match_results = Channel.empty()
 
-    if (params.noMatchesApi) {
+    if (params.noMatchesApi || matches_api_apps.isEmpty()) {
         SCAN_SEQUENCES(
             ch_seqs,
             db_releases,
-            applications,
+            local_only_apps,
             params.appsConfig,
             data_dir
         )
@@ -84,10 +88,9 @@ workflow {
         Then run analyses on sequences not listed in the API */
         LOOKUP(
             ch_seqs,
-            applications,
+            matches_api_apps,
             db_releases,
             interproscan_version,
-            workflow.manifest,
             params.matchesApiUrl,
             params.matchesApiChunkSize,
             params.matchesApiMaxRetries
@@ -96,23 +99,18 @@ workflow {
         no_matches_fastas     = LOOKUP.out.noMatchesFasta
         no_lookup_fastas      = LOOKUP.out.noLookupFasta
 
-        all_apps = applications.clone() as Set
-        nonapi_apps = ["signalp_prok", "signalp_euk", "tmhmm", "deeptmhmm"]
-        api_apps = all_apps.findAll { !nonapi_apps.contains(it) }
-        local_apps = all_apps.findAll { nonapi_apps.contains(it) }
-
         SCAN_REMAINING(
             no_matches_fastas,
             db_releases,
-            api_apps,
+            matches_api_apps,
             params.appsConfig,
             data_dir
         )
 
         SCAN_LOCALLY(
-            no_lookup_fastas,
+            ch_seqs,
             db_releases,
-            local_apps,
+            local_only_apps,
             params.appsConfig,
             data_dir
         )

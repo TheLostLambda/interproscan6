@@ -9,11 +9,13 @@ workflow INIT_PIPELINE {
     outdir
     outprefix
     no_matches_api
+    matches_api_url
     interpro_version
     skip_intepro
     skip_applications
     goterms
     pathways
+    workflow_manifest
 
     main:
     // Check the input
@@ -79,9 +81,26 @@ workflow INIT_PIPELINE {
         outprefix = "${outdir}/${outprefix}"
     }
 
+    (matches_api_apps, local_only_apps, api_version, error) = Lookup.prepareLookup(
+        apps,
+        no_matches_api,
+        matches_api_url,
+        version,
+        workflow_manifest
+    )
+    if (error) {
+        log.warn error
+    } else if (!no_matches_api && !local_only_apps.isEmpty()) {
+        log.warn "The following applications are not available in the Matches API:\n" +
+                "  ${local_only_apps.join("\n  ")}\n" +
+                "These analyses will be run via the Matches API}"
+    }
+
     emit:
     fasta            // str: path to input fasta file
-    apps             // list: list of application to
+    local_only_apps  // list: list of application to that are not in the matches API
+    matches_api_apps // list: list of applications that are in the matches API
+    api_version      // str: version of the matches API
     datadir          // str: path to data directory, or null if not needed
     outprefix        // str: base path for output files
     formats          // set<String>: output file formats
