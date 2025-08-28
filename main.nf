@@ -30,25 +30,38 @@ workflow {
         params.formats,
         params.outdir,
         params.outprefix,
+        params.noMatchesApi,
+        params.matchesApiUrl,
         params.interpro,
         params.skipInterpro,
         params.skipApplications,
         params.goterms,
-        params.pathways
+        params.pathways,
+        workflow.manifest
     )
     fasta_file           = Channel.fromPath(INIT_PIPELINE.out.fasta.val)
-    applications         = INIT_PIPELINE.out.apps.val
+    local_only_apps      = INIT_PIPELINE.out.local_only_apps.val
+    matches_api_apps     = INIT_PIPELINE.out.matches_api_apps.val
+    matches_api_url      = INIT_PIPELINE.out.matches_api_url.val
+    api_version          = INIT_PIPELINE.out.api_version.val
     data_dir             = INIT_PIPELINE.out.datadir.val
     outprefix            = INIT_PIPELINE.out.outprefix.val
     formats              = INIT_PIPELINE.out.formats.val
     interpro_version     = INIT_PIPELINE.out.version.val
 
+    println "Applications to run locally: ${local_only_apps}"
+    println "Applications to get matches from API: ${matches_api_apps}"
+    println "Matches API URL: ${matches_api_url ?: 'Not using Matches API'}"
+    println "Matches API version: ${api_version ?: 'N/A'}"
+    System.exit(0)
+
     PREPARE_DATABASES(
-        applications,
-        params.appsConfig,
+        local_only_apps,
+        matches_api_apps,
         data_dir,
         interpro_version,
         workflow.manifest.version,
+        params.appsConfig,
         params.goterms,
         params.pathways,
         params.globus
@@ -70,7 +83,7 @@ workflow {
         SCAN_SEQUENCES(
             ch_seqs,
             db_releases,
-            applications,
+            local_only_apps,
             params.appsConfig,
             data_dir
         )
@@ -88,8 +101,15 @@ workflow {
             params.matchesApiChunkSize,
             params.matchesApiMaxRetries
         )
+        api_applications      = LOOKUP.out.apiApplications
         precalculated_matches = LOOKUP.out.precalculatedMatches
         no_matches_fastas     = LOOKUP.out.noMatchesFasta
+        no_api_fastas         = LOOKUP.out.noApiFasta
+
+        api_applications.view { println "API applications: ${it}" }
+        precalculated_matches.view { println "Precalculated matches: ${it}" }
+        no_matches_fastas.view { println "No matches fasta: ${it}" }
+        no_api_fastas.view { println "No API fasta: ${it}" }    
 
         SCAN_SEQUENCES(
             no_matches_fastas,
