@@ -81,30 +81,22 @@ workflow INIT_PIPELINE {
         outprefix = "${outdir}/${outprefix}"
     }
 
-    matches_api_apps = []
-    local_only_apps = apps.clone() as List<String>
-    if (!no_matches_api) {
-        (matches_api_apps, local_only_apps, matches_api_url, api_version, error) = Lookup.prepareLookup(
-            apps,
-            matches_api_url,
-            version,
-            workflow_manifest
-        )
-        if (error) {
-            log.warn error
-            matches_api_apps = []
-            local_only_apps  = apps.clone() as List<String>
-            matches_api_url  = null
-        }
+    (matches_api_apps, local_only_apps, api_version, error) = Lookup.prepareLookup(
+        apps,
+        no_matches_api,
+        matches_api_url,
+        version,
+        workflow_manifest
+    )
+    if (error) {
+        log.warn error
     }
 
     emit:
     fasta            // str: path to input fasta file
-    apps             // list: list of all applications to run
-    local_only_apps  // list: list of applications to run locally
-    matches_api_apps // list: list of applications to get precalculated matches from the Matches API
-    matches_api_url  // str: URL of the Matches API, or null if not used
-    api_version      // str: version of the Matches API
+    local_only_apps  // list: list of application to that are not in the matches API
+    matches_api_apps // list: list of applications that are in the matches API
+    api_version      // str: version of the matches API
     datadir          // str: path to data directory, or null if not needed
     outprefix        // str: base path for output files
     formats          // set<String>: output file formats

@@ -8,7 +8,8 @@ include { VALIDATE_DATA                 } from "../../../modules/download"
 
 workflow PREPARE_DATABASES {
     take:
-    applications
+    local_only_apps
+    matches_api_apps
     apps_config
     data_dir
     interpro_version
@@ -18,6 +19,7 @@ workflow PREPARE_DATABASES {
     use_globus
 
     main:
+    applications = local_only_apps + matches_api_apps
     iprscan_major_minor = iprscan_version.split("\\.")[0..1].join(".")
     ch_ready = Channel.empty()
 
