@@ -22,7 +22,6 @@ workflow LOOKUP {
     LOOKUP_MATCHES(lookup_input)
     precalculatedMatches = LOOKUP_MATCHES.out[0]
     noMatchesFasta       = LOOKUP_MATCHES.out[1]
-    noLookupFasta        = LOOKUP_MATCHES.out[2]
 
     emit:
     precalculatedMatches

@@ -97,7 +97,6 @@ workflow {
         )
         precalculated_matches = LOOKUP.out.precalculatedMatches
         no_matches_fastas     = LOOKUP.out.noMatchesFasta
-        no_lookup_fastas      = LOOKUP.out.noLookupFasta
 
         SCAN_REMAINING(
             no_matches_fastas,

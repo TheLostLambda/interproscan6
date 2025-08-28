@@ -8,11 +8,10 @@ process LOOKUP_MATCHES {
     executor 'local'
 
     input:
-    tuple val(index), val(fasta), val(url), val(applications), val(api_apps), val(chunkSize), val(maxRetries)
+    tuple val(index), val(fasta), val(applications), val(url), val(chunkSize), val(maxRetries)
 
     output:
     tuple val(index), path("calculatedMatches.json")
-    tuple val(index), path("noMatches.fasta"), optional: true
     tuple val(index), path("noLookup.fasta"), optional: true
 
     exec:
@@ -52,8 +51,8 @@ process LOOKUP_MATCHES {
                     }
                 } else {
                     def seq = sequences[proteinMd5]
-                    noMatchesFasta.append(">${proteinMd5}\n")
-                    noMatchesFasta.append("${seq}\n")
+                    noLookupFasta.append(">${proteinMd5}\n")
+                    noLookupFasta.append("${seq}\n")
                 }
             }
         } else {
@@ -72,7 +71,7 @@ process LOOKUP_MATCHES {
         new File(calculatedMatchesPath.toString()).write(JsonOutput.toJson([:]))
         new File(noLookupFastaPath.toString()).write(new File(fasta.toString()).text)
     }
-}   
+}
 
 def Map transformMatch(Map match, String seq) {
     // * operator - spread contents of a map or collecion into another map or collection
