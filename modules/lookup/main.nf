@@ -20,13 +20,6 @@ process LOOKUP_MATCHES {
     def calculatedMatchesPath = task.workDir.resolve("calculatedMatches.json")
     def noLookupFastaPath = task.workDir.resolve("noLookup.fasta")
 
-    if (applications.isEmpty()) {
-        // No applications: just copy input fasta to noLookup.fasta and write empty matches
-        new File(calculatedMatchesPath.toString()).write(JsonOutput.toJson([:]))
-        new File(noLookupFastaPath.toString()).write(new File(seqFasta).text)
-        return
-    }
-
     def calculatedMatches = [:]
     def noLookupFasta = new StringBuilder()
     Map<String, String> sequences = FastaFile.parse(seqFasta)  // [md5: sequence]

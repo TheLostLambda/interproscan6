@@ -74,7 +74,7 @@ workflow {
 
     match_results = Channel.empty()
 
-    if (params.noMatchesApi) {
+    if (params.noMatchesApi || matches_api_apps.isEmpty()) {
         SCAN_SEQUENCES(
             ch_seqs,
             db_releases,
