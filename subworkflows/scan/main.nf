@@ -21,7 +21,7 @@ include { SUPERFAMILY       } from "../superfamily"
 include { TMBED             } from "../tmbed"
 include { REPORT_NO_MATCHES } from "../../modules/no_matches"
 
-workflow SCAN {
+workflow SCAN_SEQUENCES {
     take:
     ch_seqs             // channel of tuples (index, fasta file)
     db_releases         // map: [db: version, dirpath]

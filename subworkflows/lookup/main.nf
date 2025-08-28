@@ -1,4 +1,4 @@
-include { LOOKUP_MATCHES } from "../../modules/lookup"
+include { PREPARE_LOOKUP; LOOKUP_MATCHES } from "../../modules/lookup"
 
 workflow LOOKUP {
     // Prepare connection and retrieve precalculated matched from the InterPro API
@@ -7,21 +7,47 @@ workflow LOOKUP {
     matches_api_apps      // member db analyses to run that are in the matches API
     db_releases           // map: [db: version, dirpath]           
     interproscan_version  // major.minor interproscan version number
+    api_version           // version of the matches API
     url                   // str, url to matches api
     chunk_size            // int
     max_retries           // int
 
     main:
-    
-    ch_seqs
-        .map { index, fasta ->
-            tuple(index, fasta, matches_api_apps, url, chunk_size, max_retries)
-        }
-        .set { lookup_input }
+    PREPARE_LOOKUP(
+        matches_api_apps,
+        api_version,
+        db_releases,
+        url
+    )
 
-    LOOKUP_MATCHES(lookup_input)
+    // Branch sequences based on API availability
+    api_result = PREPARE_LOOKUP.out[0]
+        .combine(ch_seqs)
+        .branch {
+            available: it[0] != null
+            unavailable: it[0] == null
+        }
+
+    // Run LOOKUP_MATCHES only on available branch
+    LOOKUP_MATCHES(
+        api_result.available.map { api_url, index, fasta ->
+            tuple(index, fasta, matches_api_apps, api_url, chunk_size, max_retries)
+        }
+    )
+
     precalculatedMatches = LOOKUP_MATCHES.out[0]
-    noMatchesFasta       = LOOKUP_MATCHES.out[1]
+        .mix(
+            api_result.unavailable.map { _, index, fasta -> 
+                tuple(index, null)
+            }
+        )
+
+    noMatchesFasta = LOOKUP_MATCHES.out[1]
+        .mix(
+            api_result.unavailable.map { _, index, fasta -> 
+                tuple(index, fasta)
+            }
+        )
 
     emit:
     precalculatedMatches

@@ -3,6 +3,7 @@ class Lookup {
         List<String> allMatchesApiApps = []
         List<String> matchesApiApps = []
         List<String> localOnlyApps  = []
+        String apiInterproVersion = null
         String apiVersion
         String error
 
@@ -19,6 +20,7 @@ class Lookup {
                             " is not compatible with the Matches API at ${url};" +
                             " analyses will be run locally"
                 } else {
+                    apiInterproVersion = info.release
                     if (info.analyses) {
                         allMatchesApiApps.addAll(info.analyses*.name.collect { it.toLowerCase().replaceAll("[-\\s]", "") })
                         apps.each { app ->
@@ -36,6 +38,6 @@ class Lookup {
             localOnlyApps  = apps.clone() as List<String>
         }
 
-        return [matchesApiApps, localOnlyApps, apiVersion, error]
+        return [matchesApiApps, localOnlyApps, apiInterproVersion, error]
     }
 }
