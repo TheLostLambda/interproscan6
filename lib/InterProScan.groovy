@@ -25,7 +25,6 @@ class InterProScan {
         ],
         [
             name: "enable-ml",
-            metavar: "<ENABLE-MACHINELEARNING-APPS",
             description: "include machine (deep) learning-based applications in the default applications."
         ],
         [
@@ -260,10 +259,15 @@ class InterProScan {
         return dirs ? dirs.last().fileName.toString() : null
     }
 
-    static validateApplications(String applications, String skipApplications, Map appsConfig) {
+    static validateApplications(String applications, String skipApplications, Map appsConfig, Boolean enableML) {
         if (!applications && !skipApplications) {
             // Run all applications, except licensed packages with an unpopulated dir field
             def appsToRun = appsConfig.findAll{ it ->
+                if (it.value?.enabled == false ) {  // only include deeplearning apps in the default apps if enabled
+                    if (!enableML) {
+                        return false
+                    }
+                }
                 if (this.LICENSED_SOFTWARE.contains(it.key)) {
                     return it.value?.dir
                 }

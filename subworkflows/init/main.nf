@@ -4,6 +4,7 @@ workflow INIT_PIPELINE {
     input
     applications
     apps_config
+    enableML
     datadir
     formats
     outdir
@@ -24,11 +25,12 @@ workflow INIT_PIPELINE {
     }
 
     // Applications validation
-    (apps, error) = InterProScan.validateApplications(applications, skip_applications, apps_config)
+    (apps, error) = InterProScan.validateApplications(applications, skip_applications, apps_config, enableML)
     if (!apps) {
         log.error error
         exit 1
     }
+    println "Applications to be run: ${apps.join(', ')}"
 
     if (skip_intepro && (goterms || pathways)) {
         log.error "--skip_intepro is mutually exclusive with --goterms and --pathways"
