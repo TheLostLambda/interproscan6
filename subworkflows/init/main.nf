@@ -30,7 +30,6 @@ workflow INIT_PIPELINE {
         log.error error
         exit 1
     }
-    println "Applications to be run: ${apps.join(', ')}"
 
     if (skip_intepro && (goterms || pathways)) {
         log.error "--skip_intepro is mutually exclusive with --goterms and --pathways"
