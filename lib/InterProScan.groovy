@@ -24,6 +24,11 @@ class InterProScan {
             description: "comma-separated applications to scan the sequences with. Default: all.",
         ],
         [
+            name: "enable-ml",
+            metavar: "<ENABLE-MACHINELEARNING-APPS",
+            description: "include machine (deep) learning-based applications in the default applications."
+        ],
+        [
             name: "formats",
             metavar: "<FORMATS>",
             description: "comma-separated output formats. Available: JSON,TSV,XML,GFF3. Default: JSON,TSV,XML,GFF3."
