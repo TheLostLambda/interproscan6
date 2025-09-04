@@ -90,9 +90,9 @@ workflow INIT_PIPELINE {
     if (error) {
         log.warn error
     } else if (!no_matches_api && !local_only_apps.isEmpty()) {
-        log.warn "The following applications are not available in the Matches API:\n" +
-                "  ${local_only_apps.join("\n  ")}\n" +
-                "These analyses will be run via the Matches API}"
+        log.warn "The following analyses are not available in the Matches API: " +
+                local_only_apps.join(", ") +
+                ". They will be executed locally."
     }
 
     emit:
