@@ -10,7 +10,7 @@ class Lookup {
         if (!no_matches_api && url) { // url check for unit tests
             Map info = HTTPRequest.fetch("${HTTPRequest.sanitizeURL(url)}/info".toString(), null, 0, true)
             if (info == null) {
-                error = "An error occurred while querying the Matches API [/info];" +
+                error = "An error occurred while querying the Matches API;" +
                         " analyses will be run locally"
             } else {
                 apiVersion = info.api ?: "X.Y.Z"
