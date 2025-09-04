@@ -21,9 +21,7 @@ process PREPARE_LOOKUP {
     exec:
     _url = url // reassign to avoid variable already declared error
     if (db_releases["interpro"]["version"] != api_interpro_version) {
-            log.warn "The local InterPro version does not match the match API release \n" +
-                     "(Local: ${db_releases['interpro']}, Matches API: ${api_interpro_version}).\n" +
-                     "Pre-calculated matches will not be retrieved, and analyses will be run locally"
+            log.warn "The local InterPro version (${db_releases['interpro']}) does not match the Matches API release (${api_interpro_version}). Pre-calculated matches will not be retrieved and analyses will run locally."
             _url = null
     }
     api_url = _url
