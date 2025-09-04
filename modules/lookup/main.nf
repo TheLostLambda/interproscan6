@@ -16,7 +16,7 @@ process PREPARE_LOOKUP {
     val url
 
     output:
-    val apiUrl
+    val api_url
 
     exec:
     _url = url // reassign to avoid variable already declared error
@@ -26,7 +26,7 @@ process PREPARE_LOOKUP {
                      "Pre-calculated matches will not be retrieved, and analyses will be run locally"
             _url = null
     }
-    apiUrl = _url
+    api_url = _url
 }
 
 process LOOKUP_MATCHES {
