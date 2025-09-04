@@ -85,7 +85,6 @@ workflow INIT_PIPELINE {
         apps,
         no_matches_api,
         matches_api_url,
-        version,
         workflow_manifest
     )
     if (error) {

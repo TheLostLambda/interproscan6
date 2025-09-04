@@ -1,5 +1,5 @@
 class Lookup {
-    static prepareLookup(List<String> apps, Boolean no_matches_api, String url, String interproscan_version, workflow_manifest) {
+    static prepareLookup(List<String> apps, Boolean noMatchesApi, String matchesApiUrl, workflowManifest) {
         List<String> allMatchesApiApps = []
         List<String> matchesApiApps = []
         List<String> localOnlyApps  = []
@@ -7,8 +7,8 @@ class Lookup {
         String apiVersion
         String error
 
-        if (!no_matches_api && url) { // url check for unit tests
-            Map info = HTTPRequest.fetch("${HTTPRequest.sanitizeURL(url)}/info".toString(), null, 0, true)
+        if (!noMatchesApi && matchesApiUrl) { // url check for unit tests
+            Map info = HTTPRequest.fetch("${HTTPRequest.sanitizeURL(matchesApiUrl)}/info".toString(), null, 0, true)
             if (info == null) {
                 error = "An error occurred while querying the Matches API;" +
                         " analyses will be run locally"
@@ -16,8 +16,8 @@ class Lookup {
                 apiVersion = info.api ?: "X.Y.Z"
                 def majorVersion = apiVersion.split("\\.")[0]
                 if (majorVersion != "0") {
-                    error = "${workflow_manifest.name} ${workflow_manifest.version}" +
-                            " is not compatible with the Matches API at ${url};" +
+                    error = "${workflowManifest.name} ${workflowManifest.version}" +
+                            " is not compatible with the Matches API at ${matchesApiUrl};" +
                             " analyses will be run locally"
                 } else {
                     apiInterproVersion = info.release
@@ -34,7 +34,7 @@ class Lookup {
             }   
         }
 
-        if (error || matchesApiApps.isEmpty() || no_matches_api) {
+        if (error || matchesApiApps.isEmpty() || noMatchesApi) {
             localOnlyApps  = apps.clone() as List<String>
         }
 
