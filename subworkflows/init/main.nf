@@ -4,7 +4,7 @@ workflow INIT_PIPELINE {
     input
     applications
     apps_config
-    enableML
+    includeML
     datadir
     formats
     outdir
@@ -27,7 +27,7 @@ workflow INIT_PIPELINE {
     }
 
     // Applications validation
-    (apps, error) = InterProScan.validateApplications(applications, skip_applications, apps_config, enableML)
+    (apps, error) = InterProScan.validateApplications(applications, skip_applications, apps_config, includeML)
     if (!apps) {
         log.error error
         exit 1

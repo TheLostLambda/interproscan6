@@ -28,7 +28,7 @@ workflow {
         params.input,
         params.applications,
         params.appsConfig,
-        params.enableMl,
+        params.includeMl,
         params.datadir,
         params.formats,
         params.outdir,

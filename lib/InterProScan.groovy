@@ -24,8 +24,8 @@ class InterProScan {
             description: "comma-separated applications to scan the sequences with. Default: all.",
         ],
         [
-            name: "enable-ml",
-            description: "include machine (deep) learning-based applications in the default applications."
+            name: "include-ml",
+            description: "include machine (deep) learning-based applications (DeepTMHMM, SignalP_prok, SignalP_euk, TMbed) in the analysis. These applications are not run by default due to their high resource requirements."
         ],
         [
             name: "formats",
@@ -259,12 +259,17 @@ class InterProScan {
         return dirs ? dirs.last().fileName.toString() : null
     }
 
-    static validateApplications(String applications, String skipApplications, Map appsConfig, Boolean enableML) {
+    static validateApplications(String applications, String skipApplications, Map appsConfig, Boolean includeML) {
+        if (applications && skipApplications) {
+            return [null, "--applications and --skip-applications are mutually exclusive"]
+        }
+
         if (!applications && !skipApplications) {
             // Run all applications, except licensed packages with an unpopulated dir field
+            // and only include deeplearning apps in the default apps if enabled
             def appsToRun = appsConfig.findAll{ it ->
-                if (it.value?.enabled == false ) {  // only include deeplearning apps in the default apps if enabled
-                    if (!enableML) {
+                if (it.value?.enabled == false ) {
+                    if (!includeML) {
                         return false
                     }
                 }
@@ -274,11 +279,10 @@ class InterProScan {
                 return true
             }.keySet().toList()
             return [appsToRun, null]
-        } else if (applications && skipApplications) {
-            return [null, "--applications and --skip-applications are mutually exclusive"]
         }
+        
 
-        // Make a collection of recognized application names
+        // Make a collection of recognized application names [alias: standardised]
         def allApps = [:]
         appsConfig.each { label, appl ->
             allApps[label] = label
@@ -289,7 +293,19 @@ class InterProScan {
                 allApps[stdAlias] = label
             }
         }
-        def appsToRun = applications ? [] : allApps.values().toSet()
+        def appsToRun = applications ? [] : allApps.findAll { it ->
+            if (appsConfig[it.value].containsKey('enabled')) {
+                if (includeML) {
+                    if (this.LICENSED_SOFTWARE.contains(it.value)) {
+                        return appsConfig[it.value]?.dir
+                    } else {
+                        return true
+                    }
+                }
+                return appsConfig[it.value]?.enabled
+            }
+            return true
+        }.values().toSet()
         def applicationsInput = applications ? applications : skipApplications
         def appsParam = applicationsInput.replaceAll("[- ]", "").split(",").collect { it.trim() }.toSet()
 
