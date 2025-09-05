@@ -25,7 +25,7 @@ class InterProScan {
         ],
         [
             name: "include-ml",
-            description: "include machine (deep) learning-based applications (DeepTMHMM, SignalP_prok, SignalP_euk, TMbed) in the analysis. These applications are not run by default due to their high resource requirements."
+            description: "include activated machine (deep) learning-based applications (DeepTMHMM, SignalP_prok, SignalP_euk, TMbed) in the analysis. These applications are not run by default due to their high resource requirements."
         ],
         [
             name: "formats",
@@ -278,7 +278,7 @@ class InterProScan {
                 }
                 return true
             }.keySet().toList()
-
+    
             if (includeML) {
                 def invalidApps = appsConfig.findAll { it.value.containsKey('enabled') && this.LICENSED_SOFTWARE.contains(it.key) && !it.value?.dir }.keySet().toList()
                 if (invalidApps) {
@@ -332,7 +332,7 @@ class InterProScan {
 
         if (applications) {
             def userApps = applications.replaceAll("[- ]", "").split(",")*.trim()
-            def invalidApps = userApps.findAll { appsConfig[allApps[it]].containsKey('enabled') && !appsConfig[allApps[it]]?.dir }
+            def invalidApps = userApps.findAll { appsConfig[allApps[it]].containsKey('enabled') && this.LICENSED_SOFTWARE.contains(it) && !appsConfig[allApps[it]]?.dir }
             if (invalidApps) {
                 def error = "The following applications cannot be run: ${invalidApps.join(', ')}. See https://github.com/ebi-pf-team/interproscan6#licensed-analyses."
                 return [null, error, null]
@@ -345,7 +345,7 @@ class InterProScan {
                 invalidApps = appsConfig.findAll { it.value.containsKey('enabled') && this.LICENSED_SOFTWARE.contains(it.key) && !it.value?.dir }.keySet().toList()
             } else if (skipApplications) { // Subtract skipped ml-based apps
                 invalidApps = appsConfig.findAll { appName, appConfig ->
-                    if (appConfig.containsKey('enabled') && !appConfig?.dir) {
+                    if (appConfig.containsKey('enabled') && !appConfig?.dir && this.LICENSED_SOFTWARE.contains(appName)) {
                         def appAliases = allApps.findAll { it.value == appName }.keySet()
                         return !appAliases.any { appsParam.contains(it) }
                     }
