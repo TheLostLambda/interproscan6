@@ -278,10 +278,17 @@ class InterProScan {
                 }
                 return true
             }.keySet().toList()
-            return [appsToRun, null]
+
+            if (includeML) {
+                def invalidApps = appsConfig.findAll { it.value.containsKey('enabled') && this.LICENSED_SOFTWARE.contains(it.key) && !it.value?.dir }.keySet().toList()
+                if (invalidApps) {
+                    def warn = "The following machine learning-based applications were requested with '--include-ml' but cannot be run: ${invalidApps.join(', ')}. See https://github.com/ebi-pf-team/interproscan6#licensed-analyses."
+                    return [appsToRun, null, warn]
+                }
+            }
+            return [appsToRun, null, null]
         }
         
-
         // Make a collection of recognized application names [alias: standardised]
         def allApps = [:]
         appsConfig.each { label, appl ->
@@ -319,33 +326,40 @@ class InterProScan {
                 }
             } else {
                 def error = "Unrecognised application: '${appName}'. Try '--help' to list available applications."
-                return [null, error]
+                return [null, error, null]
             }
         }
 
         if (applications) {
-            // If specified (using --applications) inactivated licensed apps, raise an error
-            appNames = applications.replaceAll("[- ]", "").split(",").collect { it.trim() }.toSet()
-            invalidApps = appNames.findAll { app ->
-                this.LICENSED_SOFTWARE.contains(app) && !appsConfig[app]?.dir
-            }
+            def userApps = applications.replaceAll("[- ]", "").split(",")*.trim()
+            def invalidApps = userApps.findAll { appsConfig[allApps[it]].containsKey('enabled') && !appsConfig[allApps[it]]?.dir }
             if (invalidApps) {
                 def error = "The following applications cannot be run: ${invalidApps.join(', ')}. See https://github.com/ebi-pf-team/interproscan6#licensed-analyses."
-                return [null, error]
+                return [null, error, null]
             }
         }
 
         if (includeML) {
-            // Raise warnings for inactivated ml apps
-            invalidApps = appsToRun.findAll { app ->
-                this.LICENSED_SOFTWARE.contains(app) && !appsConfig[app]?.dir
+            def invalidApps = []
+            if (applications) {
+                invalidApps = appsConfig.findAll { it.value.containsKey('enabled') && this.LICENSED_SOFTWARE.contains(it.key) && !it.value?.dir }.keySet().toList()
+            } else if (skipApplications) { // Subtract skipped ml-based apps
+                invalidApps = appsConfig.findAll { appName, appConfig ->
+                    if (appConfig.containsKey('enabled') && !appConfig?.dir) {
+                        def appAliases = allApps.findAll { it.value == appName }.keySet()
+                        return !appAliases.any { appsParam.contains(it) }
+                    }
+                    return false
+                }.keySet().toList()
             }
+
             if (invalidApps) {
-                log.warn "The following machine learning-based applications were requested but cannot be run: ${invalidApps.join(', ')}. See https://github.com/ebi-pf-team/interproscan6#licensed-analyses."
+                def warn = "The following machine learning-based applications were requested with '--include-ml' but cannot be run: ${invalidApps.join(', ')}. See https://github.com/ebi-pf-team/interproscan6#licensed-analyses."
+                return [appsToRun.toSet().toList(), null, warn]
             }
         }
 
-        return [appsToRun.toSet().toList(), null]
+        return [appsToRun.toSet().toList(), null, null]
     }
 
     static String validateInterProVersion(versionParam) {
