@@ -323,16 +323,25 @@ class InterProScan {
             }
         }
 
-        def invalidApps = appsToRun.findAll { app ->
-            this.LICENSED_SOFTWARE.contains(app) && !appsConfig[app]?.dir
-        }
-
-        if (invalidApps) {
-            if (skipApplications) {
-                appsToRun.removeAll(invalidApps)
-            } else {
+        if (applications) {
+            // If specified (using --applications) inactivated licensed apps, raise an error
+            appNames = applications.replaceAll("[- ]", "").split(",").collect { it.trim() }.toSet()
+            invalidApps = appNames.findAll { app ->
+                this.LICENSED_SOFTWARE.contains(app) && !appsConfig[app]?.dir
+            }
+            if (invalidApps) {
                 def error = "The following applications cannot be run: ${invalidApps.join(', ')}. See https://github.com/ebi-pf-team/interproscan6#licensed-analyses."
                 return [null, error]
+            }
+        }
+
+        if (includeML) {
+            // Raise warnings for inactivated ml apps
+            invalidApps = appsToRun.findAll { app ->
+                this.LICENSED_SOFTWARE.contains(app) && !appsConfig[app]?.dir
+            }
+            if (invalidApps) {
+                log.warn "The following machine learning-based applications were requested but cannot be run: ${invalidApps.join(', ')}. See https://github.com/ebi-pf-team/interproscan6#licensed-analyses."
             }
         }
 
