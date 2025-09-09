@@ -4,6 +4,7 @@ workflow INIT_PIPELINE {
     input
     applications
     apps_config
+    runML
     datadir
     formats
     outdir
@@ -26,10 +27,12 @@ workflow INIT_PIPELINE {
     }
 
     // Applications validation
-    (apps, error) = InterProScan.validateApplications(applications, skip_applications, apps_config)
+    (apps, error, warn) = InterProScan.validateApplications(applications, skip_applications, apps_config, runML)
     if (!apps) {
         log.error error
         exit 1
+    } else if (warn) {
+        log.warn warn
     }
 
     if (skip_intepro && (goterms || pathways)) {
