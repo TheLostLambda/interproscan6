@@ -1,4 +1,5 @@
 nextflow.enable.dsl=2
+import java.time.format.DateTimeFormatter
 
 include { INIT_PIPELINE      } from "./subworkflows/init"
 include { PREPARE_DATABASES  } from "./subworkflows/prepare/databases"
@@ -9,8 +10,6 @@ include { SCAN_SEQUENCES as SCAN_REMAINING;
           SCAN_SEQUENCES     } from "./subworkflows/scan"
 include { COMBINE            } from "./subworkflows/combine"
 include { OUTPUT             } from "./subworkflows/output"
-
-import java.time.format.DateTimeFormatter
 
 workflow {
     println "# ${workflow.manifest.name} ${workflow.manifest.version}"
@@ -28,7 +27,7 @@ workflow {
         params.input,
         params.applications,
         params.appsConfig,
-        params.includeMl,
+        params.runML,
         params.datadir,
         params.formats,
         params.outdir,

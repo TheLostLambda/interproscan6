@@ -24,8 +24,8 @@ class InterProScan {
             description: "comma-separated applications to scan the sequences with. Default: all.",
         ],
         [
-            name: "include-ml",
-            description: "include activated machine (deep) learning-based applications (DeepTMHMM, SignalP_prok, SignalP_euk, TMbed) in the analysis. These applications are not run by default due to their high resource requirements."
+            name: "run-ml",
+            description: "run available activated machine learning (ML) based applications (e.g. DeepTMHMM, SignalP 6, TMbed). By default, ML analyses are disabled due to their high resource requirements."
         ],
         [
             name: "formats",
@@ -259,7 +259,7 @@ class InterProScan {
         return dirs ? dirs.last().fileName.toString() : null
     }
 
-    static validateApplications(String applications, String skipApplications, Map appsConfig, Boolean includeML) {
+    static validateApplications(String applications, String skipApplications, Map appsConfig, Boolean runML) {
         if (applications && skipApplications) {
             return [null, "--applications and --skip-applications are mutually exclusive"]
         }
@@ -269,7 +269,7 @@ class InterProScan {
             // and only include deeplearning apps in the default apps if enabled
             def appsToRun = appsConfig.findAll{ it ->
                 if (it.value?.enabled == false ) {
-                    if (!includeML) {
+                    if (!runML) {
                         return false
                     }
                 }
@@ -279,10 +279,10 @@ class InterProScan {
                 return true
             }.keySet().toList()
     
-            if (includeML) {
+            if (runML) {
                 def invalidApps = appsConfig.findAll { it.value.containsKey('enabled') && this.LICENSED_SOFTWARE.contains(it.key) && !it.value?.dir }.keySet().toList()
                 if (invalidApps) {
-                    def warn = "The following machine learning-based applications were requested with '--include-ml' but cannot be run: ${invalidApps.join(', ')}. See https://github.com/ebi-pf-team/interproscan6#licensed-analyses."
+                    def warn = "The following machine learning-based analyses are unavailable and will be skipped, even though --run-ml was specified: ${invalidApps.join(', ')}. See https://github.com/ebi-pf-team/interproscan6#licensed-analyses."
                     return [appsToRun, null, warn]
                 }
             }
@@ -302,7 +302,7 @@ class InterProScan {
         }
         def appsToRun = applications ? [] : allApps.findAll { it ->
             if (appsConfig[it.value].containsKey('enabled')) {
-                if (includeML) {
+                if (runML) {
                     if (this.LICENSED_SOFTWARE.contains(it.value)) {
                         return appsConfig[it.value]?.dir
                     } else {
@@ -339,7 +339,7 @@ class InterProScan {
             }
         }
 
-        if (includeML) {
+        if (runML) {
             def invalidApps = []
             if (applications) {
                 invalidApps = appsConfig.findAll { it.value.containsKey('enabled') && this.LICENSED_SOFTWARE.contains(it.key) && !it.value?.dir }.keySet().toList()
@@ -354,7 +354,7 @@ class InterProScan {
             }
 
             if (invalidApps) {
-                def warn = "The following machine learning-based applications were requested with '--include-ml' but cannot be run: ${invalidApps.join(', ')}. See https://github.com/ebi-pf-team/interproscan6#licensed-analyses."
+                def warn = "The following machine learning-based analyses are unavailable and will be skipped even though --run-ml was specified: ${invalidApps.join(', ')}. See https://github.com/ebi-pf-team/interproscan6#licensed-analyses."
                 return [appsToRun.toSet().toList(), null, warn]
             }
         }
