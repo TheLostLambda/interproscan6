@@ -37,18 +37,16 @@ process WRITE_JSON {
                 if (nucleic) {
                     nucleicToProteinMd5 = db.groupProteins(proteins)
                     nucleicToProteinMd5.each { String nucleicMd5, Set<String> proteinMd5s ->
-                        generator.writeStartObject()
-                        generator.writeStringField("interproscan-version", interproscan_version)
-                        generator.writeStringField("interpro-version", db_releases?.interpro?.version)
-                        generator.writeFieldName("results")
                         if (!seenNucleicMd5s.contains(nucleicMd5)) {
-                            writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
                             seenNucleicMd5s.add(nucleicMd5)
-                        } else {
-                            generator.writeNull()
+                            generator.writeStartObject()
+                            generator.writeStringField("interproscan-version", interproscan_version)
+                            generator.writeStringField("interpro-version", db_releases?.interpro?.version)
+                            generator.writeFieldName("results")
+                            writeNucleic(nucleicMd5, proteinMd5s, proteins, generator, db)
+                            generator.writeEndObject()
+                            generator.writeRaw('\n')
                         }
-                        generator.writeEndObject()
-                        generator.writeRaw('\n')
                     }
                 } else {
                     proteins.each { String proteinMd5, Map proteinMatches ->
